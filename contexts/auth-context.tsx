@@ -10,10 +10,11 @@ import {
   sendPasswordResetEmail,
   signInWithPopup,
   GoogleAuthProvider,
-  updateProfile
+  updateProfile,
+  Auth
 } from "firebase/auth";
-import { setDoc, doc, getFirestore } from "firebase/firestore";
-import { auth } from "@/lib/firebase";
+import { setDoc, doc, getFirestore, Firestore } from "firebase/firestore";
+import { auth as firebaseAuth, db as firebaseDb } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
@@ -35,10 +36,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const db = getFirestore();
+  
+  // Check if Firebase auth is available
+  const auth: Auth | undefined = firebaseAuth;
+  const db: Firestore | undefined = firebaseDb;
 
   useEffect(() => {
     console.log("Setting up auth state listener");
+    
+    // Only set up the listener if auth is initialized
+    if (!auth) {
+      console.warn("Auth not initialized - Firebase config may be missing");
+      setLoading(false);
+      setError("Firebase authentication is not configured properly. Please check your environment variables.");
+      return;
+    }
+    
     const unsubscribe = onAuthStateChanged(
       auth,
       async (user) => {
@@ -54,13 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   // 🔹 Sign In (Email & Password)
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
+      
+      if (!auth) {
+        throw new Error("Authentication not initialized. Check Firebase configuration.");
+      }
+      
       await signInWithEmailAndPassword(auth, email, password);
       router.push("/");
     } catch (error: any) {

@@ -15,12 +15,30 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// ✅ Initialize Firebase only once
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Check if Firebase config is valid
+const isFirebaseConfigValid = Object.values(firebaseConfig).every(value => 
+  value !== undefined && value !== null && value !== '');
 
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
+// Conditionally initialize Firebase
+let app;
+let auth;
+let db;
+let storage;
+let analytics;
+
+if (isFirebaseConfigValid) {
+  try {
+    // ✅ Initialize Firebase only once
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+  }
+} else {
+  console.warn("Firebase configuration is missing or invalid. Authentication features will not work.");
+}
 
 export { app, auth, db, storage, analytics };
