@@ -1,6 +1,7 @@
+
 let userConfig = undefined
 try {
-  userConfig = await import('./v0-user-next.config')
+  userConfig = await import('./v0-user-next.config.js').catch(() => null)
 } catch (e) {
   // ignore error
 }
@@ -21,6 +22,8 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  // Ensure the app runs even if fonts aren't available
+  optimizeFonts: false
 }
 
 mergeConfig(nextConfig, userConfig)
