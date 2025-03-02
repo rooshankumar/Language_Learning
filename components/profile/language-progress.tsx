@@ -1,93 +1,31 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-interface LanguageProgressProps {
-  language: string
-}
-
-export function LanguageProgress({ language }: LanguageProgressProps) {
-  // This would typically come from a database or API
-  const progressData = {
-    vocabulary: 65,
-    grammar: 48,
-    speaking: 72,
-    listening: 60,
-    reading: 80,
-    writing: 55,
-  }
-
+export function LanguageProgress() {
+  // Mock data - in a real app, this would come from your database
   const vocabularyWords = [
-    { word: "Casa", translation: "House", mastered: true },
-    { word: "Perro", translation: "Dog", mastered: true },
-    { word: "Gato", translation: "Cat", mastered: true },
-    { word: "Libro", translation: "Book", mastered: false },
-    { word: "Escuela", translation: "School", mastered: false },
+    { word: "Bonjour", translation: "Hello", mastered: true },
+    { word: "Merci", translation: "Thank you", mastered: true },
+    { word: "S'il vous plaît", translation: "Please", mastered: false },
+    { word: "Au revoir", translation: "Goodbye", mastered: false },
+    { word: "Comment ça va?", translation: "How are you?", mastered: true },
   ]
 
   const grammarRules = [
-    { rule: "Present Tense", description: "Used to describe current actions", mastered: true },
-    { rule: "Past Tense", description: "Used to describe completed actions", mastered: false },
-    { rule: "Future Tense", description: "Used to describe future actions", mastered: false },
+    { rule: "Present Tense", description: "Basic verb conjugation", mastered: true },
+    { rule: "Gender Agreement", description: "Matching adjectives with nouns", mastered: false },
+    { rule: "Articles", description: "Using le, la, les, un, une, des", mastered: true },
+    { rule: "Negation", description: "Using ne...pas structure", mastered: false },
   ]
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Your {language} Progress</CardTitle>
-          <CardDescription>Track your language learning journey</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">Vocabulary</span>
-                <span className="text-sm text-muted-foreground">{progressData.vocabulary}%</span>
-              </div>
-              <Progress value={progressData.vocabulary} className="h-2" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">Grammar</span>
-                <span className="text-sm text-muted-foreground">{progressData.grammar}%</span>
-              </div>
-              <Progress value={progressData.grammar} className="h-2" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">Speaking</span>
-                <span className="text-sm text-muted-foreground">{progressData.speaking}%</span>
-              </div>
-              <Progress value={progressData.speaking} className="h-2" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">Listening</span>
-                <span className="text-sm text-muted-foreground">{progressData.listening}%</span>
-              </div>
-              <Progress value={progressData.listening} className="h-2" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">Reading</span>
-                <span className="text-sm text-muted-foreground">{progressData.reading}%</span>
-              </div>
-              <Progress value={progressData.reading} className="h-2" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">Writing</span>
-                <span className="text-sm text-muted-foreground">{progressData.writing}%</span>
-              </div>
-              <Progress value={progressData.writing} className="h-2" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
+      <div>
+        <h3 className="text-lg font-medium">Language Progress</h3>
+        <p className="text-sm text-muted-foreground">Track your language learning journey</p>
+      </div>
       <Tabs defaultValue="vocabulary">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="vocabulary">Vocabulary</TabsTrigger>
@@ -139,4 +77,3 @@ export function LanguageProgress({ language }: LanguageProgressProps) {
     </div>
   )
 }
-
