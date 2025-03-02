@@ -92,16 +92,25 @@ if (typeof window !== 'undefined') {
   } catch (error) {
     console.error("❌ Firebase initialization error:", error);
     
-    // Log more specific error for common issues
-    if (error.code === 'auth/invalid-api-key') {
-      console.error("The Firebase API key is invalid. Please check your environment variables.");
-      // Use mock services when there's an error with Firebase initialization in development
-      if (process.env.NODE_ENV === 'development') {
-        console.warn("💡 Falling back to mock Firebase services due to initialization error.");
-        auth = mockAuth as unknown as Auth;
-        db = mockFirestore as unknown as Firestore;
-        storage = mockStorage as unknown as FirebaseStorage;
-        console.log("✅ Mock Firebase services initialized as fallback");
+    // Use mock services when there's an error with Firebase initialization in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("💡 Falling back to mock Firebase services due to initialization error.");
+      
+      // Enhance mockAuth with any missing required methods
+      const enhancedMockAuth = {
+        ...mockAuth,
+        // Add any additional methods that might be missing from the mock
+        _getRecaptchaConfig: () => null,
+      };
+      
+      auth = enhancedMockAuth as unknown as Auth;
+      db = mockFirestore as unknown as Firestore;
+      storage = mockStorage as unknown as FirebaseStorage;
+      console.log("✅ Mock Firebase services initialized as fallback");
+    } else {
+      // In production, log more detailed error message
+      if (error.code === 'auth/invalid-api-key') {
+        console.error("The Firebase API key is invalid. Please check your environment variables.");
       }
     }
   }
