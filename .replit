@@ -5,17 +5,29 @@ run = "npm run dev"
 channel = "stable-24_05"
 
 [deployment]
-run = ["sh", "-c", "npm run dev"]
+run = ["sh", "-c", "npm run start"]
 
 [[ports]]
 localPort = 3000
 externalPort = 80
 
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
 [workflows]
-runButton = "Start Dev Server"
+runButton = "Run Next.js Dev Server"
 
 [[workflows.workflow]]
 name = "Start Dev Server"
+author = 40138757
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Run Next.js Dev Server"
 author = 40138757
 
 [[workflows.workflow.tasks]]
