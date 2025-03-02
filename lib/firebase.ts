@@ -57,14 +57,22 @@ let analytics: Promise<Analytics | null> | undefined;
 const hasRequiredConfig = apiKey && authDomain && projectId && storageBucket && 
                          messagingSenderId && appId;
 
+// Import mock services for development mode
+import { mockAuth, mockFirestore, mockStorage } from './mock-auth';
+
 // Only initialize Firebase if we're in a browser environment and have all required config
 if (typeof window !== 'undefined') {
   try {
     if (!hasRequiredConfig) {
       console.error("❌ Missing required Firebase configuration variables");
-      // In development, we can continue with a mock or fallback
+      // In development, we can continue with mock services
       if (process.env.NODE_ENV === 'development') {
-        console.warn("💡 Using development mode without Firebase. Authentication features won't work.");
+        console.warn("💡 Using development mode with mock Firebase services.");
+        // Use mock services in development when Firebase config is missing
+        auth = mockAuth as unknown as Auth;
+        db = mockFirestore as unknown as Firestore;
+        storage = mockStorage as unknown as FirebaseStorage;
+        console.log("✅ Mock Firebase services initialized for development");
       }
     } else if (!getApps().length) {
       app = initializeApp(firebaseConfig);
@@ -87,6 +95,14 @@ if (typeof window !== 'undefined') {
     // Log more specific error for common issues
     if (error.code === 'auth/invalid-api-key') {
       console.error("The Firebase API key is invalid. Please check your environment variables.");
+      // Use mock services when there's an error with Firebase initialization in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("💡 Falling back to mock Firebase services due to initialization error.");
+        auth = mockAuth as unknown as Auth;
+        db = mockFirestore as unknown as Firestore;
+        storage = mockStorage as unknown as FirebaseStorage;
+        console.log("✅ Mock Firebase services initialized as fallback");
+      }
     }
   }
 }

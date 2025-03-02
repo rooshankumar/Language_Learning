@@ -56,29 +56,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only set up the listener if auth is initialized
     if (!auth) {
       console.log("Auth not initialized yet or missing config");
-      // If we're in development mode, we can continue without Firebase auth
-      if (process.env.NODE_ENV === 'development') {
-        console.warn("Running in development mode without Firebase authentication");
-        setLoading(false); // Set loading to false so the app can continue
-      }
-      return; // Wait for auth to be initialized
+      // Wait for auth to be initialized or for mock auth to be set up
+      return;
     }
     
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      async (user) => {
-        console.log("Auth state changed:", user ? "User signed in" : "No user");
-        setUser(user);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Auth state error:", error);
-        setError(error.message);
-        setLoading(false);
-      }
-    );
+    try {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        async (user) => {
+          console.log("Auth state changed:", user ? "User signed in" : "No user");
+          setUser(user);
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Auth state error:", error);
+          setError(error.message);
+          setLoading(false);
+        }
+      );
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Failed to set up auth state listener:", error);
+      // If setting up auth state listener fails, continue without blocking the UI
+      setLoading(false);
+    }
   }, [auth]);
 
   // 🔹 Sign In (Email & Password)
