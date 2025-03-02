@@ -27,7 +27,12 @@ export default function SignUp() {
 
     try {
       await signUp(email, password, name)
-      router.push("/onboarding")
+      toast({
+        title: "Account created successfully",
+        description: "Please sign in with your new credentials.",
+        variant: "default",
+      })
+      router.push("/sign-in")
     } catch (error) {
       toast({
         title: "Error signing up",
@@ -41,6 +46,19 @@ export default function SignUp() {
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true)
+    
+    try {
+      await signInWithGoogle()
+      router.push("/sign-in")
+    } catch (error) {
+      toast({
+        title: "Error signing up with Google",
+        description: "Please try again or use email registration.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
 
     try {
       await signInWithGoogle()

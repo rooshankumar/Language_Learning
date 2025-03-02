@@ -24,14 +24,14 @@ export function middleware(request: NextRequest) {
 
   // Handle protected routes when not authenticated
   if (protectedRoutes.some(route => pathname.startsWith(route)) && !authCookie) {
-    // During development, allow access to all routes
-    if (process.env.NODE_ENV === 'development' || pathname === "/") {
-      return NextResponse.next()
-    }
-    
     const response = NextResponse.redirect(new URL("/sign-in", request.url))
     response.cookies.set("redirect-count", (redirectCount + 1).toString(), { maxAge: 10 })
     return response
+  }
+  
+  // Redirect authenticated users from auth pages to home
+  if (authCookie && authRoutes.some(route => pathname === route)) {
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
   // Handle auth routes when authenticated
