@@ -16,8 +16,12 @@ externalPort = 80
 localPort = 3001
 externalPort = 3001
 
+[[ports]]
+localPort = 3002
+externalPort = 3002
+
 [workflows]
-runButton = "Run Next.js Dev Server"
+runButton = "Run"
 
 [[workflows.workflow]]
 name = "Start Dev Server"
@@ -29,6 +33,14 @@ args = "npm run dev"
 
 [[workflows.workflow]]
 name = "Run Next.js Dev Server"
+author = 40138757
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Run"
 author = 40138757
 
 [[workflows.workflow.tasks]]
