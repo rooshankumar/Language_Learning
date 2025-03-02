@@ -53,22 +53,41 @@ let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
 let analytics: Promise<Analytics | null> | undefined;
 
-// Only initialize Firebase if we're in a browser environment
+// Check if all required Firebase variables are present
+const hasRequiredConfig = apiKey && authDomain && projectId && storageBucket && 
+                         messagingSenderId && appId;
+
+// Only initialize Firebase if we're in a browser environment and have all required config
 if (typeof window !== 'undefined') {
   try {
-    if (!getApps().length) {
+    if (!hasRequiredConfig) {
+      console.error("❌ Missing required Firebase configuration variables");
+      // In development, we can continue with a mock or fallback
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("💡 Using development mode without Firebase. Authentication features won't work.");
+      }
+    } else if (!getApps().length) {
       app = initializeApp(firebaseConfig);
       console.log("✅ Firebase initialized successfully");
+      
+      auth = getAuth(app);
+      db = getFirestore(app);
+      storage = getStorage(app);
+      analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
     } else {
       app = getApp();
+      auth = getAuth(app);
+      db = getFirestore(app);
+      storage = getStorage(app);
+      analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
     }
-    
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-    analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
   } catch (error) {
     console.error("❌ Firebase initialization error:", error);
+    
+    // Log more specific error for common issues
+    if (error.code === 'auth/invalid-api-key') {
+      console.error("The Firebase API key is invalid. Please check your environment variables.");
+    }
   }
 }
 

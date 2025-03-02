@@ -56,6 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only set up the listener if auth is initialized
     if (!auth) {
       console.log("Auth not initialized yet or missing config");
+      // If we're in development mode, we can continue without Firebase auth
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("Running in development mode without Firebase authentication");
+        setLoading(false); // Set loading to false so the app can continue
+      }
       return; // Wait for auth to be initialized
     }
     
