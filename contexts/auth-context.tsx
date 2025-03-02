@@ -11,7 +11,7 @@ import {
 } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
-import { setCookie, deleteCookie } from "cookies-next"
+import { cookies } from "next/headers"
 
 interface AuthContextType {
   user: User | null
@@ -41,11 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (user) {
           // Set auth cookie when user is logged in
           user.getIdToken().then(token => {
-            setCookie("auth", token, { maxAge: 60 * 60 * 24 * 7 }) // 1 week
+            document.cookie = `auth=${token}; max-age=${60 * 60 * 24 * 7}; path=/`; // 1 week
           })
         } else {
           // Remove auth cookie when user is logged out
-          deleteCookie("auth")
+          document.cookie = "auth=; max-age=0; path=/";
         }
         setLoading(false)
       },
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true)
       setError(null)
       await firebaseSignOut(auth)
-      deleteCookie("auth")
+      document.cookie = "auth=; max-age=0; path=/";
       router.push("/sign-in")
     } catch (error: any) {
       console.error("Sign out error:", error)
