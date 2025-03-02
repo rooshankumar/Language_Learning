@@ -23,5 +23,5 @@ const storage = getStorage(app);
 // Initialize Analytics and export it
 const analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
 
-export { app, auth, db, storage, analytics } };
+export { app, auth, db, storage, analytics };
 
