@@ -37,19 +37,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
-  // Check if Firebase auth is available
-  const auth: Auth | undefined = firebaseAuth;
-  const db: Firestore | undefined = firebaseDb;
+  // Check if Firebase auth is available - must be in useEffect due to SSR
+  const [auth, setAuth] = useState<Auth | undefined>(undefined);
+  const [db, setDb] = useState<Firestore | undefined>(undefined);
+
+  // Initialize Firebase only on client side
+  useEffect(() => {
+    // Import Firebase auth only on client side
+    import("@/lib/firebase").then(({ auth: clientAuth, db: clientDb }) => {
+      setAuth(clientAuth);
+      setDb(clientDb);
+    });
+  }, []);
 
   useEffect(() => {
     console.log("Setting up auth state listener");
     
     // Only set up the listener if auth is initialized
     if (!auth) {
-      console.warn("Auth not initialized - Firebase config may be missing");
-      setLoading(false);
-      setError("Firebase authentication is not configured properly. Please check your environment variables.");
-      return;
+      console.log("Auth not initialized yet or missing config");
+      return; // Wait for auth to be initialized
     }
     
     const unsubscribe = onAuthStateChanged(
@@ -76,14 +83,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       
       if (!auth) {
+        console.error("Authentication not initialized. Check Firebase configuration.");
+        setError("Authentication service is not available. Please try again later.");
         throw new Error("Authentication not initialized. Check Firebase configuration.");
       }
       
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Sign in successful:", userCredential.user.uid);
       router.push("/");
     } catch (error: any) {
       console.error("Sign in error:", error);
-      setError(error.message);
+      
+      // Provide more user-friendly error messages
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        setError("Invalid email or password. Please try again.");
+      } else if (error.code === 'auth/invalid-email') {
+        setError("Please enter a valid email address.");
+      } else if (error.code === 'auth/too-many-requests') {
+        setError("Too many unsuccessful login attempts. Please try again later.");
+      } else if (error.code === 'auth/network-request-failed') {
+        setError("Network error. Please check your internet connection.");
+      } else if (error.code === 'auth/internal-error') {
+        setError("An internal error occurred. Please try again later.");
+      } else {
+        setError(error.message || "Failed to sign in. Please try again.");
+      }
+      
       throw error;
     } finally {
       setLoading(false);
@@ -95,27 +120,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
+      
+      if (!auth || !db) {
+        console.error("Authentication or database not initialized.");
+        setError("Service is not available. Please try again later.");
+        throw new Error("Authentication or database not initialized.");
+      }
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
+      console.log("User created successfully:", newUser.uid);
 
       // Update profile with name if provided
       if (name) {
         await updateProfile(newUser, { displayName: name });
       }
 
-      // 🔹 Save user to Firestore
-      await setDoc(doc(db, "users", newUser.uid), {
-        uid: newUser.uid,
-        name: name || "Anonymous",
-        email,
-        createdAt: new Date().toISOString(),
-      });
+      try {
+        // 🔹 Save user to Firestore
+        await setDoc(doc(db, "users", newUser.uid), {
+          uid: newUser.uid,
+          name: name || "Anonymous",
+          email,
+          createdAt: new Date().toISOString(),
+        });
+        console.log("User data saved to Firestore");
+      } catch (firestoreError) {
+        console.error("Failed to save user data to Firestore:", firestoreError);
+        // Continue anyway since auth is created
+      }
 
       setUser(newUser);
       router.push("/onboarding");
     } catch (error: any) {
       console.error("Sign up error:", error);
-      setError(error.message);
+      
+      // Provide more user-friendly error messages
+      if (error.code === 'auth/email-already-in-use') {
+        setError("This email is already registered. Try signing in instead.");
+      } else if (error.code === 'auth/invalid-email') {
+        setError("Please enter a valid email address.");
+      } else if (error.code === 'auth/weak-password') {
+        setError("Password is too weak. Please use a stronger password.");
+      } else if (error.code === 'auth/network-request-failed') {
+        setError("Network error. Please check your internet connection.");
+      } else {
+        setError(error.message || "Failed to create account. Please try again.");
+      }
+      
       throw error;
     } finally {
       setLoading(false);
@@ -127,22 +179,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
+      
+      if (!auth || !db) {
+        console.error("Authentication or database not initialized.");
+        setError("Service is not available. Please try again later.");
+        throw new Error("Authentication or database not initialized.");
+      }
+      
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
+      console.log("Google sign-in successful:", googleUser.uid);
 
-      // 🔹 Save Google user to Firestore if first-time login
-      await setDoc(doc(db, "users", googleUser.uid), {
-        uid: googleUser.uid,
-        name: googleUser.displayName,
-        email: googleUser.email,
-        createdAt: new Date().toISOString(),
-      }, { merge: true });
+      try {
+        // 🔹 Save Google user to Firestore if first-time login
+        await setDoc(doc(db, "users", googleUser.uid), {
+          uid: googleUser.uid,
+          name: googleUser.displayName,
+          email: googleUser.email,
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
+        console.log("Google user data saved to Firestore");
+      } catch (firestoreError) {
+        console.error("Failed to save Google user data to Firestore:", firestoreError);
+        // Continue anyway since auth is successful
+      }
 
       setUser(googleUser);
+      router.push("/"); // Redirect to home page after successful sign-in
     } catch (error: any) {
       console.error("Google sign in error:", error);
-      setError(error.message);
+      
+      // Provide more user-friendly error messages
+      if (error.code === 'auth/popup-closed-by-user') {
+        setError("Sign-in was canceled. Please try again.");
+      } else if (error.code === 'auth/popup-blocked') {
+        setError("Pop-up was blocked by your browser. Please allow pop-ups for this site.");
+      } else if (error.code === 'auth/network-request-failed') {
+        setError("Network error. Please check your internet connection.");
+      } else {
+        setError(error.message || "Failed to sign in with Google. Please try again.");
+      }
+      
       throw error;
     } finally {
       setLoading(false);
