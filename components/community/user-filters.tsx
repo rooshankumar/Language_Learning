@@ -170,6 +170,7 @@ export function UserFilters({ filters, setFilters }: UserFiltersProps) {
   )
 }
 
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -180,15 +181,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Check, ChevronsUpDown } from "lucide-react"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
-import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { X } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface FiltersState {
   language: string
@@ -232,15 +228,13 @@ export function UserFilters({ onFilterChange }: UserFiltersProps) {
     language: "",
     interests: [],
   })
-  
+
+  // Report filter changes to parent component
   useEffect(() => {
     onFilterChange(filters)
   }, [filters, onFilterChange])
-  
-  const handleLanguageChange = (value: string) => {
-    setFilters(prev => ({ ...prev, language: value }))
-  }
-  
+
+  // Toggle an interest in the filter
   const toggleInterest = (interest: string) => {
     setFilters(prev => {
       if (prev.interests.includes(interest)) {
@@ -256,73 +250,80 @@ export function UserFilters({ onFilterChange }: UserFiltersProps) {
       }
     })
   }
-  
-  const clearFilters = () => {
-    setFilters({ language: "", interests: [] })
+
+  // Update language filter
+  const handleLanguageChange = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      language: value
+    }))
   }
-  
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({
+      language: "",
+      interests: []
+    })
+  }
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-      <div className="w-full sm:w-auto">
-        <Select value={filters.language} onValueChange={handleLanguageChange}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by language" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All languages</SelectItem>
-            {LANGUAGES.map(language => (
-              <SelectItem key={language} value={language}>
-                {language}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto justify-between"
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-xl flex justify-between items-center">
+          <span>Filters</span>
+          {(filters.language || filters.interests.length > 0) && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFilters}
+              className="h-8 text-xs"
+            >
+              Clear All
+            </Button>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Language filter */}
+        <div>
+          <h3 className="text-sm font-medium mb-2">Language</h3>
+          <Select 
+            value={filters.language} 
+            onValueChange={handleLanguageChange}
           >
-            {filters.interests.length === 0
-              ? "Filter by interests"
-              : `${filters.interests.length} selected`}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
-          <Command>
-            <CommandInput placeholder="Search interests..." />
-            <CommandEmpty>No interest found.</CommandEmpty>
-            <CommandGroup>
-              {INTERESTS.map((interest) => (
-                <CommandItem
-                  key={interest}
-                  value={interest}
-                  onSelect={() => toggleInterest(interest)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      filters.interests.includes(interest) 
-                        ? "opacity-100" 
-                        : "opacity-0"
-                    )}
-                  />
-                  {interest}
-                </CommandItem>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Any language</SelectItem>
+              {LANGUAGES.map(language => (
+                <SelectItem key={language} value={language}>{language}</SelectItem>
               ))}
-            </CommandGroup>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      
-      {(filters.language || filters.interests.length > 0) && (
-        <Button variant="ghost" size="sm" onClick={clearFilters}>
-          Clear filters
-        </Button>
-      )}
-    </div>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Interests filter */}
+        <div>
+          <h3 className="text-sm font-medium mb-2">Interests</h3>
+          <div className="flex flex-wrap gap-2">
+            {INTERESTS.map(interest => (
+              <Badge 
+                key={interest}
+                variant={filters.interests.includes(interest) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => toggleInterest(interest)}
+              >
+                {interest}
+                {filters.interests.includes(interest) && (
+                  <X className="w-3 h-3 ml-1" />
+                )}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
