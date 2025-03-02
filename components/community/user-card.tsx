@@ -4,7 +4,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MessageCircle, UserPlus } from "lucide-react"
+import { MessageCircle, UserPlus, MessageSquare } from "lucide-react"
+import { useState } from "react"
+import Link from "next/link"
 
 type UserData = {
   uid: string
@@ -16,12 +18,12 @@ type UserData = {
   bio: string
 }
 
-interface UserCardProps {
+interface DetailedUserCardProps {
   user: UserData
   onStartConversation: () => void
 }
 
-export function UserCard({ user, onStartConversation }: UserCardProps) {
+export function DetailedUserCard({ user, onStartConversation }: DetailedUserCardProps) {
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <div className="h-24 bg-gradient-to-r from-primary to-purple-400"></div>
@@ -75,24 +77,6 @@ export function UserCard({ user, onStartConversation }: UserCardProps) {
   )
 }
 
-"use client"
-
-import { useState } from "react"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { MessageSquare } from "lucide-react"
-import Link from "next/link"
-
-type UserData = {
-  uid: string
-  displayName: string
-  photoURL: string
-  nativeLanguage: string
-  learningLanguage: string
-  interests: string[]
-  bio: string
-}
-
 interface UserCardProps {
   user: UserData
 }
@@ -101,47 +85,24 @@ export function UserCard({ user }: UserCardProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardContent className="pt-6 flex-1">
-        <div className="flex flex-col items-center mb-4">
-          <img 
-            src={user.photoURL || "/placeholder-user.jpg"} 
-            alt={user.displayName} 
-            className="h-20 w-20 rounded-full object-cover mb-2"
-          />
-          <h3 className="font-semibold text-lg">{user.displayName}</h3>
-          <div className="flex gap-2 mt-1">
-            <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-              {user.nativeLanguage}
-            </span>
-            <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-              {user.learningLanguage}
-            </span>
-          </div>
-        </div>
-        
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground line-clamp-3">{user.bio}</p>
-          
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src={user.photoURL || ""} alt={user.displayName} />
+            <AvatarFallback>{user.displayName?.substring(0, 2) || "??"}</AvatarFallback>
+          </Avatar>
           <div>
-            <h4 className="text-sm font-medium mb-1">Interests</h4>
-            <div className="flex flex-wrap gap-1">
-              {user.interests.map((interest) => (
-                <span 
-                  key={interest} 
-                  className="bg-muted text-xs px-2 py-0.5 rounded"
-                >
-                  {interest}
-                </span>
-              ))}
-            </div>
+            <h3 className="font-medium">{user.displayName}</h3>
+            <p className="text-sm text-muted-foreground">
+              {user.nativeLanguage} → {user.learningLanguage}
+            </p>
           </div>
         </div>
       </CardContent>
-      
-      <CardFooter>
-        <Button asChild className="w-full" size="sm">
-          <Link href={`/chat?partner=${user.uid}`}>
+      <CardFooter className="border-t pt-4">
+        <Button variant="outline" className="w-full" asChild>
+          <Link href={`/chat/${user.uid}`}>
             <MessageSquare className="mr-2 h-4 w-4" />
-            Start Conversation
+            Chat
           </Link>
         </Button>
       </CardFooter>
