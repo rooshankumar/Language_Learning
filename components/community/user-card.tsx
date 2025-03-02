@@ -75,3 +75,76 @@ export function UserCard({ user, onStartConversation }: UserCardProps) {
   )
 }
 
+"use client"
+
+import { useState } from "react"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { MessageSquare } from "lucide-react"
+import Link from "next/link"
+
+type UserData = {
+  uid: string
+  displayName: string
+  photoURL: string
+  nativeLanguage: string
+  learningLanguage: string
+  interests: string[]
+  bio: string
+}
+
+interface UserCardProps {
+  user: UserData
+}
+
+export function UserCard({ user }: UserCardProps) {
+  return (
+    <Card className="h-full flex flex-col">
+      <CardContent className="pt-6 flex-1">
+        <div className="flex flex-col items-center mb-4">
+          <img 
+            src={user.photoURL || "/placeholder-user.jpg"} 
+            alt={user.displayName} 
+            className="h-20 w-20 rounded-full object-cover mb-2"
+          />
+          <h3 className="font-semibold text-lg">{user.displayName}</h3>
+          <div className="flex gap-2 mt-1">
+            <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+              {user.nativeLanguage}
+            </span>
+            <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+              {user.learningLanguage}
+            </span>
+          </div>
+        </div>
+        
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground line-clamp-3">{user.bio}</p>
+          
+          <div>
+            <h4 className="text-sm font-medium mb-1">Interests</h4>
+            <div className="flex flex-wrap gap-1">
+              {user.interests.map((interest) => (
+                <span 
+                  key={interest} 
+                  className="bg-muted text-xs px-2 py-0.5 rounded"
+                >
+                  {interest}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter>
+        <Button asChild className="w-full" size="sm">
+          <Link href={`/chat?partner=${user.uid}`}>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Start Conversation
+          </Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}

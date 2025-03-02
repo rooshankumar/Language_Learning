@@ -37,8 +37,6 @@ export default function CommunityPage() {
       if (!user) return
 
       try {
-        // Query users who are learning the current user's native language
-        // or whose native language is the current user's learning language
         const q = query(collection(db, "users"), where("uid", "!=", user.uid))
 
         const querySnapshot = await getDocs(q)
@@ -69,104 +67,66 @@ export default function CommunityPage() {
   useEffect(() => {
     if (users.length === 0) return
 
-    let result = [...users]
+    let filtered = [...users]
 
     if (filters.language) {
-      result = result.filter(
-        (user) => user.nativeLanguage === filters.language || user.learningLanguage === filters.language,
+      filtered = filtered.filter(
+        user => user.nativeLanguage === filters.language || user.learningLanguage === filters.language
       )
     }
 
     if (filters.interests.length > 0) {
-      result = result.filter((user) => user.interests?.some((interest) => filters.interests.includes(interest)))
+      filtered = filtered.filter(
+        user => user.interests.some(interest => filters.interests.includes(interest))
+      )
     }
 
-    setFilteredUsers(result)
-  }, [filters, users])
-
-  const startConversation = async (partnerId: string) => {
-    if (!user) return
-
-    try {
-      // Check if conversation already exists
-      const conversationsRef = collection(db, "conversations")
-      const q = query(conversationsRef, where("participants", "array-contains", user.uid))
-
-      const querySnapshot = await getDocs(q)
-      let existingConversation = null
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data()
-        if (data.participants.includes(partnerId)) {
-          existingConversation = { id: doc.id, ...data }
-        }
-      })
-
-      if (existingConversation) {
-        // Redirect to existing conversation
-        window.location.href = `/chat?conversation=${existingConversation.id}`
-        return
-      }
-
-      // Create new conversation
-      const newConversationRef = await addDoc(conversationsRef, {
-        participants: [user.uid, partnerId],
-        createdAt: serverTimestamp(),
-        lastMessageTime: serverTimestamp(),
-      })
-
-      // Redirect to new conversation
-      window.location.href = `/chat?conversation=${newConversationRef.id}`
-
-      toast({
-        title: "Conversation started",
-        description: "You can now start chatting with this language partner.",
-      })
-    } catch (error) {
-      console.error("Error starting conversation:", error)
-      toast({
-        title: "Error",
-        description: "Failed to start conversation.",
-        variant: "destructive",
-      })
-    }
-  }
+    setFilteredUsers(filtered)
+  }, [users, filters])
 
   return (
     <AppShell>
-      <div className="container mx-auto py-6">
-        <div className="flex flex-col md:flex-row gap-6">
-          <UserFilters filters={filters} setFilters={setFilters} />
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-6">Find Language Partners</h1>
+      <div className="container py-6 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Community</h1>
+            <p className="text-muted-foreground">
+              Find language exchange partners that match your interests
+            </p>
+          </div>
+        </div>
 
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="text-center p-12 border rounded-lg">
-                <h3 className="text-lg font-medium">No users found</h3>
-                <p className="text-muted-foreground mt-1">Try adjusting your filters</p>
-                <Button variant="outline" className="mt-4" onClick={() => setFilters({ language: "", interests: [] })}>
+        <UserFilters 
+          onFilterChange={(newFilters) => setFilters(newFilters)} 
+        />
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredUsers.map((userData) => (
+              <UserCard 
+                key={userData.uid}
+                user={userData}
+              />
+            ))}
+
+            {filteredUsers.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">No users found matching your filters</p>
+                <Button 
+                  variant="link" 
+                  onClick={() => setFilters({ language: "", interests: [] })}
+                >
                   Clear filters
                 </Button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredUsers.map((userData) => (
-                  <UserCard
-                    key={userData.uid}
-                    user={userData}
-                    onStartConversation={() => startConversation(userData.uid)}
-                  />
-                ))}
-              </div>
             )}
           </div>
-        </div>
+        )}
       </div>
     </AppShell>
   )
 }
-
