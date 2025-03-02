@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
@@ -11,36 +12,43 @@ export function middleware(request: NextRequest) {
   // Routes that require authentication
   const protectedRoutes = ["/", "/chat", "/community", "/profile", "/settings"]
 
-  // Add a protection to prevent redirect loops - check if there's a loop flag
-  const hasRedirectLoop = request.cookies.get("redirect-loop")
-  if (hasRedirectLoop) {
-    // Clear the loop flag and bypass the redirect
+  // Check if we're in a redirect loop by counting redirects
+  const redirectCount = parseInt(request.cookies.get("redirect-count")?.value || "0")
+  
+  // If too many redirects, just let the request through
+  if (redirectCount > 3) {
     const response = NextResponse.next()
-    response.cookies.delete("redirect-loop")
+    response.cookies.delete("redirect-count")
     return response
   }
 
-  // Check if the route is protected and user is not authenticated
-  if (protectedRoutes.some((route) => pathname.startsWith(route)) && !authCookie) {
+  // Handle protected routes when not authenticated
+  if (protectedRoutes.some(route => pathname.startsWith(route)) && !authCookie) {
+    // Bypass protection for the root path as a fallback measure
+    if (pathname === "/") {
+      return NextResponse.next()
+    }
+    
     const response = NextResponse.redirect(new URL("/sign-in", request.url))
-    // Set a cookie to detect potential redirect loops
-    response.cookies.set("redirect-loop", "true", { maxAge: 5 }) // Short-lived cookie
+    response.cookies.set("redirect-count", (redirectCount + 1).toString(), { maxAge: 10 })
     return response
   }
 
-  // Check if the route is an auth route and user is authenticated
+  // Handle auth routes when authenticated
   if (authRoutes.includes(pathname) && authCookie) {
     const response = NextResponse.redirect(new URL("/", request.url))
-    // Set a cookie to detect potential redirect loops
-    response.cookies.set("redirect-loop", "true", { maxAge: 5 }) // Short-lived cookie
+    response.cookies.set("redirect-count", (redirectCount + 1).toString(), { maxAge: 10 })
     return response
   }
 
-  // If none of the conditions are met, continue with the request
-  return NextResponse.next()
+  // Reset redirect count for normal navigation
+  const response = NextResponse.next()
+  if (redirectCount > 0) {
+    response.cookies.delete("redirect-count")
+  }
+  return response
 }
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
-

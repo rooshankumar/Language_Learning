@@ -1,163 +1,125 @@
 "use client"
 
-import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
-import {
-  createUserWithEmailAndPassword,
+import { 
+  User,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  GoogleAuthProvider,
-  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail
 } from "firebase/auth"
-import { doc, getDoc, setDoc } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
+import { auth } from "@/lib/firebase"
+import { useRouter } from "next/navigation"
+import { setCookie, deleteCookie } from "cookies-next"
 
-type UserData = {
-  uid: string
-  email: string | null
-  displayName: string | null
-  photoURL: string | null
-  nativeLanguage?: string
-  learningLanguage?: string
-  interests?: string[]
-  bio?: string
-}
-
-type AuthContextType = {
-  user: UserData | null
+interface AuthContextType {
+  user: User | null
   loading: boolean
-  signUp: (email: string, password: string, name: string) => Promise<void>
+  error: string | null
   signIn: (email: string, password: string) => Promise<void>
-  signInWithGoogle: () => Promise<void>
-  logout: () => Promise<void>
-  updateUserProfile: (data: Partial<UserData>) => Promise<void>
+  signUp: (email: string, password: string) => Promise<void>
+  signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserData | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid))
-
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as UserData)
+    console.log("Setting up auth state listener")
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        console.log("Auth state changed:", user ? "User signed in" : "No user")
+        setUser(user)
+        if (user) {
+          // Set auth cookie when user is logged in
+          user.getIdToken().then(token => {
+            setCookie("auth", token, { maxAge: 60 * 60 * 24 * 7 }) // 1 week
+          })
         } else {
-          // Create basic user data if it doesn't exist
-          const userData: UserData = {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-          }
-
-          await setDoc(doc(db, "users", user.uid), userData)
-          setUser(userData)
+          // Remove auth cookie when user is logged out
+          deleteCookie("auth")
         }
-      } else {
-        setUser(null)
+        setLoading(false)
+      },
+      (error) => {
+        console.error("Auth state error:", error)
+        setError(error.message)
+        setLoading(false)
       }
-
-      setLoading(false)
-    })
+    )
 
     return () => unsubscribe()
   }, [])
 
-  const signUp = async (email: string, password: string, name: string) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      await updateProfile(userCredential.user, { displayName: name })
-
-      // Create user document in Firestore
-      const userData: UserData = {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        displayName: name,
-        photoURL: null,
-      }
-
-      await setDoc(doc(db, "users", userCredential.user.uid), userData)
-    } catch (error) {
-      console.error("Error signing up:", error)
-      throw error
-    }
-  }
-
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true)
+      setError(null)
       await signInWithEmailAndPassword(auth, email, password)
-    } catch (error) {
-      console.error("Error signing in:", error)
+      router.push("/")
+    } catch (error: any) {
+      console.error("Sign in error:", error)
+      setError(error.message)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
-  const signInWithGoogle = async () => {
+  const signUp = async (email: string, password: string) => {
     try {
-      const provider = new GoogleAuthProvider()
-      const result = await signInWithPopup(auth, provider)
-
-      // Check if user document exists
-      const userDoc = await getDoc(doc(db, "users", result.user.uid))
-
-      if (!userDoc.exists()) {
-        // Create user document in Firestore
-        const userData: UserData = {
-          uid: result.user.uid,
-          email: result.user.email,
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-        }
-
-        await setDoc(doc(db, "users", result.user.uid), userData)
-      }
-    } catch (error) {
-      console.error("Error signing in with Google:", error)
+      setLoading(true)
+      setError(null)
+      await createUserWithEmailAndPassword(auth, email, password)
+      router.push("/onboarding")
+    } catch (error: any) {
+      console.error("Sign up error:", error)
+      setError(error.message)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
-  const logout = async () => {
+  const signOut = async () => {
     try {
-      await signOut(auth)
-    } catch (error) {
-      console.error("Error signing out:", error)
-      throw error
+      setLoading(true)
+      setError(null)
+      await firebaseSignOut(auth)
+      deleteCookie("auth")
+      router.push("/sign-in")
+    } catch (error: any) {
+      console.error("Sign out error:", error)
+      setError(error.message)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const updateUserProfile = async (data: Partial<UserData>) => {
-    if (!user) return
-
+  const resetPassword = async (email: string) => {
     try {
-      await setDoc(doc(db, "users", user.uid), { ...user, ...data }, { merge: true })
-      setUser({ ...user, ...data })
-    } catch (error) {
-      console.error("Error updating profile:", error)
+      setLoading(true)
+      setError(null)
+      await sendPasswordResetEmail(auth, email)
+    } catch (error: any) {
+      console.error("Reset password error:", error)
+      setError(error.message)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        signUp,
-        signIn,
-        signInWithGoogle,
-        logout,
-        updateUserProfile,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   )
@@ -165,9 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
 }
-
