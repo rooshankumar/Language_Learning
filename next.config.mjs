@@ -26,26 +26,28 @@ const nextConfig = {
   optimizeFonts: false
 }
 
-mergeConfig(nextConfig, userConfig)
-
 function mergeConfig(nextConfig, userConfig) {
   if (!userConfig) {
-    return
+    return nextConfig
   }
 
+  const merged = { ...nextConfig }
+  
   for (const key in userConfig) {
     if (
       typeof nextConfig[key] === 'object' &&
       !Array.isArray(nextConfig[key])
     ) {
-      nextConfig[key] = {
+      merged[key] = {
         ...nextConfig[key],
         ...userConfig[key],
       }
     } else {
-      nextConfig[key] = userConfig[key]
+      merged[key] = userConfig[key]
     }
   }
+  
+  return merged
 }
 
-export default nextConfig
+export default mergeConfig(nextConfig, userConfig)

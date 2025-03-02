@@ -15,8 +15,8 @@ export function middleware(request: NextRequest) {
   // Check if we're in a redirect loop by counting redirects
   const redirectCount = parseInt(request.cookies.get("redirect-count")?.value || "0")
   
-  // If too many redirects, just let the request through
-  if (redirectCount > 3) {
+  // If too many redirects or we're on a development page, just let the request through
+  if (redirectCount > 3 || process.env.NODE_ENV === 'development') {
     const response = NextResponse.next()
     response.cookies.delete("redirect-count")
     return response
@@ -24,8 +24,8 @@ export function middleware(request: NextRequest) {
 
   // Handle protected routes when not authenticated
   if (protectedRoutes.some(route => pathname.startsWith(route)) && !authCookie) {
-    // Bypass protection for the root path as a fallback measure
-    if (pathname === "/") {
+    // During development, allow access to all routes
+    if (process.env.NODE_ENV === 'development' || pathname === "/") {
       return NextResponse.next()
     }
     
