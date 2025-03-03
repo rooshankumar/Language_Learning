@@ -6,13 +6,19 @@ import { useSidebar } from "@/components/sidebar-provider"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
-import { Globe, Home, MessageCircle, PanelLeft, Settings, User, Users } from "lucide-react"
+import { Globe, Home, MessageCircle, PanelLeft, Settings, User, Users, LogOut } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/contexts/auth-context"
 
 export function AppSidebar() {
   const { isMobile, openMobile, setOpenMobile, state, toggleSidebar } = useSidebar()
+  const { signOut } = useAuth()
+
+  const handleLogout = async () => {
+    await signOut()
+  }
 
   const sidebarContent = (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -52,7 +58,18 @@ export function AppSidebar() {
               </div>
             )}
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout} 
+              title="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">Logout</span>
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </div>
@@ -101,4 +118,3 @@ function NavItem({
     </Button>
   )
 }
-

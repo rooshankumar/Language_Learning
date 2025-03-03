@@ -1,11 +1,18 @@
 "use client"
 
-import { Home, MessageCircle, PanelLeft, User, Users } from "lucide-react"
+import { Home, MessageCircle, PanelLeft, User, Users, LogOut } from "lucide-react"
 import Link from "next/link"
 import { useSidebar } from "@/components/sidebar-provider"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/auth-context"
 
 export function MobileNav() {
+  const { signOut } = useAuth()
+
+  const handleLogout = async () => {
+    await signOut()
+  }
+
   const { toggleSidebar } = useSidebar()
 
   return (
@@ -35,6 +42,10 @@ export function MobileNav() {
             <span className="sr-only">Profile</span>
           </Link>
         </Button>
+        <Button variant="ghost" size="icon" onClick={handleLogout}>
+          <LogOut className="h-6 w-6" />
+          <span className="sr-only">Logout</span>
+        </Button>
         <Button variant="ghost" size="icon" onClick={toggleSidebar}>
           <PanelLeft className="h-6 w-6" />
           <span className="sr-only">Menu</span>
@@ -43,4 +54,3 @@ export function MobileNav() {
     </div>
   )
 }
-

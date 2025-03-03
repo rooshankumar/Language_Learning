@@ -42,7 +42,9 @@ googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
 googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 // Set custom parameters for login prompt
 googleProvider.setCustomParameters({
-  prompt: 'select_account' // Forces account selection even if already logged in
+  prompt: 'select_account', // Forces account selection even if already logged in
+  // Allow all Replit domains - helps with unauthorized domain errors
+  hd: '*'
 });
 
 const githubProvider = new GithubAuthProvider();

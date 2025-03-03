@@ -240,12 +240,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Google sign-in successful:", googleUser.uid);
 
       try {
+        // Check if this is a new signup or returning user
+        const isNewUser = googleUser.metadata.creationTime === googleUser.metadata.lastSignInTime;
+        
         // 🔹 Save Google user to Firestore if first-time login
-        await setDoc(doc(firebaseDb, "users", googleUser.uid), {
+        await setDoc(doc(db, "users", googleUser.uid), {
           uid: googleUser.uid,
           name: googleUser.displayName,
           email: googleUser.email,
           createdAt: new Date().toISOString(),
+          isNewUser: isNewUser
         }, { merge: true });
         console.log("Google user data saved to Firestore");
       } catch (firestoreError) {

@@ -29,10 +29,10 @@ export default function SignUp() {
       await signUp(email, password, name)
       toast({
         title: "Account created successfully",
-        description: "Please sign in with your new credentials.",
+        description: "Let's set up your profile now.",
         variant: "default",
       })
-      router.push("/sign-in")
+      router.push("/onboarding")
     } catch (error) {
       toast({
         title: "Error signing up",
@@ -48,8 +48,15 @@ export default function SignUp() {
     setIsLoading(true)
     
     try {
-      await signInWithGoogle()
-      router.push("/onboarding")
+      const user = await signInWithGoogle()
+      // Check if this is a new user by checking createdAt timestamp
+      if (user && user.metadata?.creationTime === user.metadata?.lastSignInTime) {
+        // This is likely a new user
+        router.push("/onboarding")
+      } else {
+        // Existing user
+        router.push("/")
+      }
     } catch (error) {
       console.error("Google sign-in error:", error)
       toast({
