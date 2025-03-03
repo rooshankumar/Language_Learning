@@ -13,105 +13,97 @@ import { useChat } from "@/hooks/use-chat"
 import { useAuth } from "@/contexts/auth-context"
 
 interface UserCardProps {
-  user: {
-    id: string
-    name: string
-    photoURL?: string
-    email?: string
-    nativeLanguage?: string
-    learningLanguages?: string[]
-    interests?: string[]
-    bio?: string
-    age?: number
-  }
+  user: any
 }
 
 export function UserCard({ user }: UserCardProps) {
   const router = useRouter()
-  const { startNewChat } = useChat()
   const { user: currentUser } = useAuth()
-  
-  const handleChatClick = async () => {
+  const { createOrGetChat } = useChat()
+
+  const handleMessageClick = async () => {
     if (!currentUser || !user.id) return
     
     try {
-      const chatId = await startNewChat(user.id)
+      const chatId = await createOrGetChat(user.id)
       router.push(`/chat/${chatId}`)
     } catch (error) {
       console.error("Error starting chat:", error)
     }
   }
 
+  const getLearningBadges = () => {
+    if (!user.learningLanguages || !user.learningLanguages.length) {
+      return <Badge variant="outline">No languages</Badge>
+    }
+    
+    return user.learningLanguages.map((lang: string) => (
+      <Badge key={lang} variant="secondary">{lang}</Badge>
+    ))
+  }
+
+  const getNativeBadges = () => {
+    if (!user.nativeLanguages || !user.nativeLanguages.length) {
+      return <Badge variant="outline">No languages</Badge>
+    }
+    
+    return user.nativeLanguages.map((lang: string) => (
+      <Badge key={lang} variant="default">{lang}</Badge>
+    ))
+  }
+
   return (
-    <Card className="w-full overflow-hidden transition-all hover:shadow-md">
-      <CardContent className="p-0">
-        <div className="relative h-32 w-full bg-gradient-to-r from-blue-400 to-purple-500">
-          {/* Background pattern/image could go here */}
-        </div>
-        <div className="relative flex flex-col items-center px-4 -mt-12 pb-4">
-          <div className="relative h-24 w-24 rounded-full border-4 border-background overflow-hidden mb-2">
-            <Image
-              src={user.photoURL || "/placeholder-user.jpg"}
-              alt={user.name || "User"}
-              fill
-              className="object-cover"
+    <Card className="overflow-hidden">
+      <div className="aspect-[3/1] bg-gradient-to-r from-primary/20 to-primary/5"></div>
+      <CardContent className="p-6 -mt-12">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="rounded-full border-4 border-background overflow-hidden">
+            <Image 
+              src={user.photoURL || "/placeholder-user.jpg"} 
+              alt={user.displayName || "User"}
+              width={80}
+              height={80}
+              className="aspect-square object-cover"
             />
           </div>
-          <h3 className="text-xl font-semibold mb-1">{user.name}</h3>
-          
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-            <span>Native: {user.nativeLanguage || "Not specified"}</span>
+          <div>
+            <h3 className="text-lg font-medium">{user.displayName || "User"}</h3>
+            <p className="text-sm text-muted-foreground">{user.location || "Unknown location"}</p>
           </div>
-          
-          {user.learningLanguages && user.learningLanguages.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              <span className="text-sm text-muted-foreground mr-1">Learning:</span>
-              {user.learningLanguages.map((lang, i) => (
-                <Badge key={i} variant="secondary" className="text-xs">
-                  {lang}
-                </Badge>
-              ))}
-            </div>
-          )}
-          
-          {user.interests && user.interests.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-              <span className="text-sm text-muted-foreground mr-1">Interests:</span>
-              {user.interests.slice(0, 3).map((interest, i) => (
-                <Badge key={i} variant="outline" className="text-xs">
-                  {interest}
-                </Badge>
-              ))}
-              {user.interests.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{user.interests.length - 3} more
-                </Badge>
-              )}
-            </div>
-          )}
-          
-          {user.bio && (
-            <p className="text-sm text-center text-muted-foreground line-clamp-3 mb-2">
-              {user.bio}
-            </p>
-          )}
         </div>
-      </CardContent>
-      
-      <CardFooter className="flex justify-between gap-2 p-4 pt-0">
-        <Button 
-          variant="default" 
-          size="sm" 
-          className="w-full" 
-          onClick={handleChatClick}
-        >
-          <MessageSquare className="mr-2 h-4 w-4" />
-          Chat
-        </Button>
         
-        <Button variant="outline" size="sm" className="w-1/3">
+        <div className="mb-4">
+          <h4 className="text-sm font-medium mb-2">Learning</h4>
+          <div className="flex flex-wrap gap-2">
+            {getLearningBadges()}
+          </div>
+        </div>
+        
+        <div className="mb-4">
+          <h4 className="text-sm font-medium mb-2">Native</h4>
+          <div className="flex flex-wrap gap-2">
+            {getNativeBadges()}
+          </div>
+        </div>
+        
+        <p className="text-sm text-muted-foreground mb-4">
+          {user.bio || "No bio available"}
+        </p>
+      </CardContent>
+      <CardFooter className="px-6 py-4 flex justify-between gap-4 border-t">
+        <Button 
+          className="flex-1" 
+          onClick={handleMessageClick}
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Message
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          title="Report user"
+        >
           <Flag className="h-4 w-4" />
-          <span className="sr-only">Report</span>
         </Button>
       </CardFooter>
     </Card>
