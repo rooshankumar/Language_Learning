@@ -1,22 +1,33 @@
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { db } from "./firebase"; // Assuming firebase initialization is elsewhere
-import { useRouter } from "next/router";
-import { useToast } from "@chakra-ui/react"; // Assuming Chakra UI is used for toasts
-import { useEffect, useState } from "react";
+"use client"
 
+import { useState, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
+import { useToast } from "@/components/ui/use-toast"
+import { db } from "@/lib/firebase"
+import { doc, getDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc } from "firebase/firestore"
 
-// ... other imports and component code ...
+interface ConversationData {
+  participants: string[];
+  participantInfo?: { [key: string]: { displayName: string; photoURL: string } };
+}
 
-function ChatPage({ chatId }: { chatId: string }) { // Assumed props
+export default function ChatPage() {
+  const { id } = useParams();
   const [conversation, setConversation] = useState<ConversationData | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
-  const user =  // ... fetch current user somehow ...;
+  const { user } = useAuth();
   const router = useRouter();
-  const toast = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (chatId && user) {
-      const conversationRef = doc(db, "conversations", chatId);
+    if (!user) {
+      router.push("/sign-in");
+      return;
+    }
+
+    if (id && user) {
+      const conversationRef = doc(db, "conversations", id);
       const unsubscribe = onSnapshot(conversationRef, (doc) => {
         if (doc.exists()) {
           const conversationData = doc.data() as ConversationData;
@@ -40,7 +51,7 @@ function ChatPage({ chatId }: { chatId: string }) { // Assumed props
             const partnerUnsubscribe = onSnapshot(partnerRef, (userDoc) => {
               if (userDoc.exists()) {
                 const userData = userDoc.data();
-                if (conversation && (!conversation.participantInfo[partnerId] || 
+                if (conversation && (!conversation.participantInfo[partnerId] ||
                     conversation.participantInfo[partnerId].displayName !== userData.displayName ||
                     conversation.participantInfo[partnerId].photoURL !== userData.photoURL)) {
                   updateDoc(conversationRef, {
@@ -70,16 +81,12 @@ function ChatPage({ chatId }: { chatId: string }) { // Assumed props
 
       return () => unsubscribe();
     }
-  }, [chatId, user, router, toast, conversation]);
+  }, [id, user, router, toast]);
 
-  // ... rest of the ChatPage component ...
-}
-
-export default ChatPage;
-
-// Define type for ConversationData if not already defined elsewhere
-interface ConversationData {
-  participants: string[];
-  participantInfo?: { [key: string]: { displayName: string; photoURL: string } };
-  // ... other conversation data ...
+  return (
+    <div>
+      <h1>Chat ID: {id}</h1>
+      {/* Add your chat UI components here */}
+    </div>
+  );
 }
