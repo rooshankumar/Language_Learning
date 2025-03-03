@@ -73,29 +73,47 @@ export const createMockAuth = () => {
 
 // Mock Firestore
 export const createMockFirestore = () => {
-  return {
-    collection: () => ({
-      doc: () => ({
-        set: async () => Promise.resolve(),
+  const mockDb = {
+    // Create a mock document reference
+    doc: (path) => {
+      return {
+        id: path.split('/').pop(),
+        set: async (data, options) => Promise.resolve(),
         get: async () => ({
           exists: true,
           data: () => ({ name: "Test User", email: "user@example.com" })
         }),
-        update: async () => Promise.resolve()
-      }),
-      where: () => ({
-        get: async () => ({
-          empty: false,
-          docs: [
-            {
-              exists: true,
-              data: () => ({ name: "Test User", email: "user@example.com" }),
-              id: "user123"
-            }
-          ]
+        update: async (data) => Promise.resolve(),
+        delete: async () => Promise.resolve(),
+        collection: (collPath) => mockDb.collection(`${path}/${collPath}`)
+      };
+    },
+    // Create a mock collection reference
+    collection: (path) => {
+      return {
+        id: path.split('/').pop(),
+        doc: (docId) => mockDb.doc(`${path}/${docId}`),
+        add: async (data) => {
+          const docId = `mock-doc-${Date.now()}`;
+          return { id: docId, ...mockDb.doc(`${path}/${docId}`) };
+        },
+        where: () => ({
+          get: async () => ({
+            empty: false,
+            docs: [
+              {
+                id: "user123",
+                exists: true,
+                data: () => ({ name: "Test User", email: "user@example.com" }),
+                ref: mockDb.doc(`${path}/user123`)
+              }
+            ]
+          })
         })
-      }),
-      add: async () => Promise.resolve({ id: "doc123" })
-    })
+      };
+    }
   };
+  
+  return mockDb;
+};
 };

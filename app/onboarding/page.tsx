@@ -1,3 +1,170 @@
+
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { doc, updateDoc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+export default function Onboarding() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [preferences, setPreferences] = useState({
+    interests: [],
+    experience: "",
+    goals: []
+  });
+
+  // Handle user not being authenticated
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Card className="w-full max-w-md p-6">
+          <h1 className="mb-4 text-xl font-semibold">User not authenticated</h1>
+          <p className="mb-4">Please sign in to continue</p>
+          <Button onClick={() => router.push("/sign-in")}>
+            Go to Sign In
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  const handleComplete = async () => {
+    try {
+      // Safe check for user and db
+      if (!user || !db) {
+        console.error("User or database not available");
+        return;
+      }
+
+      // For development mock environment
+      if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        console.log("Mock onboarding complete:", preferences);
+        router.push("/");
+        return;
+      }
+
+      // For production environment
+      const userDocRef = doc(db, "users", user.uid);
+      
+      // Update user preferences in Firestore
+      await setDoc(userDocRef, {
+        preferences,
+        onboardingCompleted: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      
+      router.push("/");
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+    }
+  };
+
+  // Steps for onboarding process
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-medium">Welcome! Let's get to know you better</h2>
+            <p>Select your interests:</p>
+            {/* Interest selection UI here */}
+            <div className="flex flex-wrap gap-2">
+              {["Technology", "Science", "Art", "Music", "Sports", "Travel"].map((interest) => (
+                <Button
+                  key={interest}
+                  variant={preferences.interests.includes(interest) ? "default" : "outline"}
+                  onClick={() => {
+                    setPreferences(prev => ({
+                      ...prev,
+                      interests: prev.interests.includes(interest)
+                        ? prev.interests.filter(i => i !== interest)
+                        : [...prev.interests, interest]
+                    }));
+                  }}
+                  className="m-1"
+                >
+                  {interest}
+                </Button>
+              ))}
+            </div>
+            <Button onClick={() => setStep(2)} className="mt-4">Next</Button>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-medium">What's your experience level?</h2>
+            <div className="space-y-2">
+              {["Beginner", "Intermediate", "Advanced"].map((level) => (
+                <Button
+                  key={level}
+                  variant={preferences.experience === level ? "default" : "outline"}
+                  onClick={() => setPreferences(prev => ({ ...prev, experience: level }))}
+                  className="w-full justify-start"
+                >
+                  {level}
+                </Button>
+              ))}
+            </div>
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+              <Button onClick={() => setStep(3)}>Next</Button>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-medium">What are your goals?</h2>
+            <div className="flex flex-wrap gap-2">
+              {["Learn new skills", "Meet people", "Build projects", "Find mentorship"].map((goal) => (
+                <Button
+                  key={goal}
+                  variant={preferences.goals.includes(goal) ? "default" : "outline"}
+                  onClick={() => {
+                    setPreferences(prev => ({
+                      ...prev,
+                      goals: prev.goals.includes(goal)
+                        ? prev.goals.filter(g => g !== goal)
+                        : [...prev.goals, goal]
+                    }));
+                  }}
+                  className="m-1"
+                >
+                  {goal}
+                </Button>
+              ))}
+            </div>
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+              <Button onClick={handleComplete}>Complete</Button>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-md p-6">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold">Let's set up your profile</h1>
+          <p className="text-muted-foreground">Step {step} of 3</p>
+        </div>
+        {renderStep()}
+      </Card>
+    </div>
+  );
+}
+
 "use client"
 
 import { useState } from "react"
