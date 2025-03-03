@@ -8,7 +8,6 @@ try {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   // Disable server-side rendering for pages with Firebase Auth
   experimental: {
     serverComponentsExternalPackages: ['firebase'],

@@ -103,7 +103,8 @@ export function useChat(chatId: string, recipientId: string): UseChatReturn {
 
   return { messages, sendMessage, loading, error };
 }
-interface UseChatReturn {
+
+interface UseChatSocketReturn {
   socket: Socket | null;
   connected: boolean;
   messages: Message[];
@@ -115,7 +116,7 @@ interface UseChatReturn {
   error: string | null;
 }
 
-export function useChat(): UseChatReturn {
+export function useChatSocket(): UseChatSocketReturn {
   const { user } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
