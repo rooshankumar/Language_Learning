@@ -22,8 +22,7 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
-  // Ensure the app runs even if fonts aren't available
-  optimizeFonts: false
+  // optimizeFonts option removed as it's not supported in Next.js 15.2.0
 }
 
 function mergeConfig(nextConfig, userConfig) {
