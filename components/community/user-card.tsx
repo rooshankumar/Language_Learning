@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react'
@@ -15,7 +16,6 @@ import { collection, addDoc, serverTimestamp, getDocs, query, where } from "fire
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/auth-context"
 
-
 // Define the user data shape
 interface UserData {
   uid: string
@@ -28,15 +28,69 @@ interface UserData {
   level?: string
 }
 
-interface UserCardProps {
-  user: UserData
-  onStartConversation?: (userId: string) => void
-}
+// UserCard Component
+export function UserCard({ user }: { user: UserData }) {
+  const router = useRouter()
+  const { user: currentUser } = useAuth()
+  const { toast } = useToast()
 
-export function UserCard({ user, onStartConversation }: UserCardProps) {
-  const handleStartConversation = () => {
-    if (onStartConversation) {
-      onStartConversation(user.uid)
+  const handleStartConversation = async () => {
+    if (!currentUser) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to start a conversation",
+        variant: "destructive"
+      })
+      router.push("/sign-in")
+      return
+    }
+
+    try {
+      // Check if conversation already exists
+      const conversationsRef = collection(db, "conversations")
+      const q = query(
+        conversationsRef, 
+        where("participants", "array-contains", currentUser.uid),
+      )
+      
+      const querySnapshot = await getDocs(q)
+      let conversationExists = false
+      let existingConversationId = ""
+      
+      querySnapshot.forEach((doc) => {
+        const conversation = doc.data()
+        if (conversation.participants.includes(user.uid)) {
+          conversationExists = true
+          existingConversationId = doc.id
+        }
+      })
+      
+      if (conversationExists) {
+        router.push(`/chat/${existingConversationId}`)
+        return
+      }
+      
+      // Create new conversation
+      const newConversationRef = await addDoc(collection(db, "conversations"), {
+        participants: [currentUser.uid, user.uid],
+        createdAt: serverTimestamp(),
+        lastMessage: null,
+        lastMessageTime: serverTimestamp()
+      })
+      
+      router.push(`/chat/${newConversationRef.id}`)
+      
+      toast({
+        title: "Conversation started",
+        description: `You can now chat with ${user.displayName || "this user"}`
+      })
+    } catch (error) {
+      console.error("Error starting conversation:", error)
+      toast({
+        title: "Error",
+        description: "Failed to start conversation. Please try again.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -75,48 +129,6 @@ export function UserCard({ user, onStartConversation }: UserCardProps) {
           Start Chat
         </Button>
       </CardFooter>
-    </Card>
-  )
-}
-
-interface DetailedUserCardProps {
-  user: UserData
-  onStartConversation: () => void
-}
-
-export function DetailedUserCard({ user, onStartConversation }: DetailedUserCardProps) {
-  return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="h-24 bg-gradient-to-r from-primary to-purple-400"></div>
-      <CardContent className="p-6 pt-0 -mt-12">
-        <Avatar className="h-24 w-24 border-4 border-background">
-          <AvatarImage src={user.photoURL || ""} alt={user.displayName} />
-          <AvatarFallback className="text-2xl">{user.displayName?.substring(0, 2) || "??"}</AvatarFallback>
-        </Avatar>
-        <h3 className="text-xl font-bold mt-4">{user.displayName}</h3>
-
-        <div className="flex gap-2 mt-2">
-          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">
-            {user.nativeLanguage}
-          </Badge>
-          <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/20">
-            {user.learningLanguage}
-          </Badge>
-        </div>
-
-        <p className="text-muted-foreground mt-3 line-clamp-3">{user.bio || "No bio provided"}</p>
-
-        <div className="flex gap-2 mt-4">
-          <Button onClick={onStartConversation} className="flex-1">
-            <MessageCircle className="mr-2 h-4 w-4" />
-            Start Chat
-          </Button>
-          <Button variant="outline" className="flex-1">
-            <User className="mr-2 h-4 w-4" />
-            View Profile
-          </Button>
-        </div>
-      </CardContent>
     </Card>
   )
 }

@@ -1,61 +1,53 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { MobileNav } from "@/components/mobile-nav"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
-import { TrustDeviceDialog } from "@/components/trust-device-dialog"; // Added import
+import { ThemeProvider } from "@/components/theme-provider"
+import { SidebarProvider } from "./sidebar-provider"
+import { Loader2 } from "lucide-react"
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode
+  requireAuth?: boolean
+}
+
+export function AppShell({ children, requireAuth = true }: AppShellProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [showDialog, setShowDialog] = useState(false);
 
+  // Protect routes that require authentication
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && requireAuth) {
       router.push("/sign-in")
-    } else if (user) {
-      // Show dialog only if trust preference hasn't been set
-      const trustDialogShown = localStorage.getItem("trust_device_dialog_shown");
-      if (!trustDialogShown) {
-        setShowDialog(true);
-      }
     }
-  }, [user, loading, router])
+  }, [user, loading, requireAuth, router])
 
-  const handleTrustDevice = (trustDevice: boolean) => {
-    if (trustDevice) {
-      localStorage.setItem("trust_device_dialog_shown", "true");
-    }
-    setShowDialog(false);
-  };
-
-
+  // Loading state
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-lg">Loading...</span>
       </div>
     )
   }
 
-  if (!user) {
-    return null
-  }
-
   return (
-    <div className="flex min-h-screen flex-col"> {/* Modified structure */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background">
-        <MobileNav />
-      </header>
-      <div className="flex flex-1">
-        <AppSidebar />
-        <main className="flex w-full flex-1 flex-col">
-          {children}
-        </main>
-      </div>
-      {showDialog && <TrustDeviceDialog onConfirm={handleTrustDevice} />} {/* Added dialog */}
-    </div>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <SidebarProvider>
+        <div className="flex h-full min-h-screen">
+          <AppSidebar />
+          <main className="flex-1 md:pl-64">
+            <MobileNav />
+            <div className="container py-6">
+              {children}
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    </ThemeProvider>
   )
 }
