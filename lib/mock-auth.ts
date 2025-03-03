@@ -1,73 +1,51 @@
 
-import { User } from "firebase/auth";
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock user for development
 const mockUser = {
-  uid: uuidv4(),
-  email: "user@example.com",
-  displayName: "Test User",
-  photoURL: "/placeholder-user.jpg",
+  uid: `mock-uid-${Date.now()}`,
+  email: "dev@example.com",
+  displayName: "Development User",
   emailVerified: true,
   isAnonymous: false,
+  photoURL: "/placeholder-user.jpg"
 };
 
-// Mock Firebase Auth provider
+// Mock Auth
 export const createMockAuth = () => {
-  let currentUser: User | null = { ...mockUser } as unknown as User;
+  const listeners = [];
   
-  const listeners: Array<(user: User | null) => void> = [];
-
   const auth = {
-    currentUser,
-    onAuthStateChanged: (callback: (user: User | null) => void) => {
-      listeners.push(callback);
-      // Trigger the callback with the current user
-      setTimeout(() => callback(currentUser), 0);
+    currentUser: mockUser,
+    onAuthStateChanged: (listener) => {
+      // Call the listener immediately with the mock user
+      setTimeout(() => listener(mockUser), 100);
       
-      // Return an unsubscribe function
+      // Store listener for future reference
+      listeners.push(listener);
+      
+      // Return unsubscribe function
       return () => {
-        const index = listeners.indexOf(callback);
-        if (index !== -1) {
+        const index = listeners.indexOf(listener);
+        if (index > -1) {
           listeners.splice(index, 1);
         }
       };
     },
     signInWithEmailAndPassword: async () => {
-      currentUser = { ...mockUser } as unknown as User;
-      listeners.forEach(callback => callback(currentUser));
-      return { user: currentUser };
-    },
-    signInWithPopup: async () => {
-      currentUser = { ...mockUser } as unknown as User;
-      listeners.forEach(callback => callback(currentUser));
-      return { user: currentUser };
+      return { user: mockUser };
     },
     createUserWithEmailAndPassword: async () => {
-      currentUser = { ...mockUser } as unknown as User;
-      listeners.forEach(callback => callback(currentUser));
-      return { user: currentUser };
+      return { user: mockUser };
     },
     signOut: async () => {
-      currentUser = null;
-      listeners.forEach(callback => callback(currentUser));
+      return Promise.resolve();
     },
-    sendPasswordResetEmail: async () => Promise.resolve(),
-    updateProfile: async () => Promise.resolve(),
-    
-    // Add missing methods needed by Firebase Auth
-    _getRecaptchaConfig: () => null,
-    tenantId: null,
-    settings: {
-      appVerificationDisabledForTesting: true
-    },
-    app: {
-      options: {
-        apiKey: 'mock-api-key'
-      }
+    signInWithPopup: async () => {
+      return { user: mockUser };
     }
   };
-
+  
   return auth;
 };
 
@@ -108,8 +86,90 @@ export const createMockFirestore = () => {
                 ref: mockDb.doc(`${path}/user123`)
               }
             ]
-          })
-        })
+          }),
+          orderBy: () => ({
+            get: async () => ({
+              empty: false,
+              docs: [
+                {
+                  id: "user123",
+                  exists: true,
+                  data: () => ({ name: "Test User", email: "user@example.com" }),
+                  ref: mockDb.doc(`${path}/user123`)
+                }
+              ]
+            }),
+            onSnapshot: (callback) => {
+              callback({
+                empty: false,
+                docs: [
+                  {
+                    id: "user123",
+                    exists: true,
+                    data: () => ({ name: "Test User", email: "user@example.com" }),
+                    ref: mockDb.doc(`${path}/user123`)
+                  }
+                ]
+              });
+              return () => {};
+            }
+          }),
+          onSnapshot: (callback) => {
+            callback({
+              empty: false,
+              docs: [
+                {
+                  id: "user123",
+                  exists: true,
+                  data: () => ({ name: "Test User", email: "user@example.com" }),
+                  ref: mockDb.doc(`${path}/user123`)
+                }
+              ]
+            });
+            return () => {};
+          }
+        }),
+        orderBy: () => ({
+          get: async () => ({
+            empty: false,
+            docs: [
+              {
+                id: "user123",
+                exists: true,
+                data: () => ({ name: "Test User", email: "user@example.com" }),
+                ref: mockDb.doc(`${path}/user123`)
+              }
+            ]
+          }),
+          onSnapshot: (callback) => {
+            callback({
+              empty: false,
+              docs: [
+                {
+                  id: "user123",
+                  exists: true,
+                  data: () => ({ name: "Test User", email: "user@example.com" }),
+                  ref: mockDb.doc(`${path}/user123`)
+                }
+              ]
+            });
+            return () => {};
+          }
+        }),
+        onSnapshot: (callback) => {
+          callback({
+            empty: false,
+            docs: [
+              {
+                id: "user123",
+                exists: true,
+                data: () => ({ name: "Test User", email: "user@example.com" }),
+                ref: mockDb.doc(`${path}/user123`)
+              }
+            ]
+          });
+          return () => {};
+        }
       };
     }
   };

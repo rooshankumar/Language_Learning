@@ -23,16 +23,27 @@ let firebaseApp;
 let auth;
 let db;
 
-// Initialize Firebase regardless of config completeness
-// This ensures we always have real Firebase services
-firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-auth = getAuth(firebaseApp);
-db = getFirestore(firebaseApp);
+// Check if we have the minimum required config
+const hasMinConfig = !!firebaseConfig.apiKey && !!firebaseConfig.authDomain && !!firebaseConfig.projectId;
 
-// Connect to emulators in development if configured
-if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
-  connectAuthEmulator(auth, 'http://localhost:9099');
-  connectFirestoreEmulator(db, 'localhost', 8080);
+// For production builds (or if we have the minimum config)
+if (hasMinConfig || process.env.NODE_ENV === 'production') {
+  // Initialize with real Firebase
+  firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(firebaseApp);
+  db = getFirestore(firebaseApp);
+  
+  // Connect to emulators in development if configured
+  if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
+    connectAuthEmulator(auth, 'http://localhost:9099');
+    connectFirestoreEmulator(db, 'localhost', 8080);
+  }
+} else {
+  // Use mock implementations for development when config is incomplete
+  console.log("Running in development mode without Firebase authentication");
+  const { createMockAuth, createMockFirestore } = require('./mock-auth');
+  auth = createMockAuth();
+  db = createMockFirestore();
 }
 
 // Initialize the authentication providers
