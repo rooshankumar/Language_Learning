@@ -159,3 +159,25 @@ export default function ChatPage() {
   )
 }
 
+"use client"
+
+import { useState } from "react"
+import { AppShell } from "@/components/app-shell"
+import { ChatList } from "@/components/chat/chat-list"
+
+export default function ChatPage() {
+  return (
+    <AppShell>
+      <div className="container py-6">
+        <h1 className="text-3xl font-bold tracking-tight mb-1">Conversations</h1>
+        <p className="text-muted-foreground mb-6">
+          Chat with your language exchange partners
+        </p>
+        
+        <div className="max-w-3xl mx-auto">
+          <ChatList />
+        </div>
+      </div>
+    </AppShell>
+  )
+}
