@@ -18,61 +18,34 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Check if all required Firebase config variables are present
-const hasAllConfig = Object.values(firebaseConfig).every(value => !!value);
-
-// Initialize Firebase
+// Always initialize Firebase - even with incomplete config for development
 let firebaseApp;
 let auth;
 let db;
-let googleProvider;
-let githubProvider;
 
-// Development mode check to catch issues during build
-const isDevelopment = process.env.NODE_ENV === 'development';
+// Initialize Firebase regardless of config completeness
+// This ensures we always have real Firebase services
+firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+auth = getAuth(firebaseApp);
+db = getFirestore(firebaseApp);
 
-if (hasAllConfig) {
-  // Normal Firebase initialization with actual config
-  firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  auth = getAuth(firebaseApp);
-  db = getFirestore(firebaseApp);
-  googleProvider = new GoogleAuthProvider();
-  githubProvider = new GithubAuthProvider();
+// Connect to emulators in development if configured
+if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
+  connectAuthEmulator(auth, 'http://localhost:9099');
+  connectFirestoreEmulator(db, 'localhost', 8080);
+}
 
-  // Optionally connect to emulators in development
-  if (isDevelopment && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
-    connectAuthEmulator(auth, 'http://localhost:9099');
-    connectFirestoreEmulator(db, 'localhost', 8080);
-  }
+console.log('✅ Firebase services initialized');
 
-  console.log('✅ Firebase services initialized with configuration');
-} else {
-  // Mock implementation for development without Firebase config
-  console.log('Running in development mode without Firebase authentication');
+// If some config is missing, log warnings but continue with real Firebase
+if (!Object.values(firebaseConfig).every(value => !!value)) {
   const missingVars = Object.entries(firebaseConfig)
     .filter(([_, value]) => !value)
     .map(([key]) => key.replace('NEXT_PUBLIC_', ''))
     .join(', ');
 
   console.warn('⚠️ Missing environment variables:', missingVars);
-  console.log('💡 Using development mode with mock Firebase services.');
-
-  // Create mock services
-  auth = createMockAuth();
-  db = createMockFirestore();
-  // Create proper mock providers that won't cause errors
-  googleProvider = {
-    providerId: 'google.com',
-    addScope: () => {},
-    setCustomParameters: () => {}
-  }; 
-  githubProvider = {
-    providerId: 'github.com',
-    addScope: () => {},
-    setCustomParameters: () => {}
-  };
-
-  console.log('✅ Mock Firebase services initialized for development');
+  console.warn('⚠️ Authentication might not work correctly without proper Firebase configuration');
 }
 
 export { auth, db, googleProvider, githubProvider };

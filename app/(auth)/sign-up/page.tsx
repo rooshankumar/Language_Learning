@@ -49,24 +49,12 @@ export default function SignUp() {
     
     try {
       await signInWithGoogle()
-      router.push("/sign-in")
+      router.push("/onboarding")
     } catch (error) {
+      console.error("Google sign-in error:", error)
       toast({
         title: "Error signing up with Google",
         description: "Please try again or use email registration.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-
-    try {
-      await signInWithGoogle()
-      router.push("/onboarding")
-    } catch (error) {
-      toast({
-        title: "Error signing up with Google",
-        description: "Please try again later.",
         variant: "destructive",
       })
     } finally {
