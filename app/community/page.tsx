@@ -37,32 +37,54 @@ export default function CommunityPage() {
       if (!user) return
 
       try {
-        const q = query(collection(db, "users"), where("uid", "!=", user.uid))
+        const usersCollection = collection(db, "users");
+        let q;
+        
+        if (user && user.uid) {
+          // If user is authenticated, exclude the current user
+          q = query(usersCollection, where("uid", "!=", user.uid));
+        } else {
+          // If no user is authenticated, get all users
+          q = query(usersCollection);
+        }
 
-        const querySnapshot = await getDocs(q)
-        const usersData: UserData[] = []
+        const querySnapshot = await getDocs(q);
+        const usersData: UserData[] = [];
 
         querySnapshot.forEach((doc) => {
-          const data = doc.data() as UserData
-          usersData.push(data)
-        })
+          const data = doc.data() as any;
+          
+          // Format the data to match UserData type, with default values for missing fields
+          const userData: UserData = {
+            uid: data.uid || doc.id,
+            displayName: data.name || data.displayName || "Anonymous User",
+            photoURL: data.photoURL || "/placeholder-user.jpg",
+            nativeLanguage: data.nativeLanguage || "Not specified",
+            learningLanguage: data.learningLanguage || "Not specified",
+            interests: data.interests || [],
+            bio: data.bio || "No bio available"
+          };
+          
+          usersData.push(userData);
+        });
 
-        setUsers(usersData)
-        setFilteredUsers(usersData)
+        console.log("Fetched users:", usersData.length);
+        setUsers(usersData);
+        setFilteredUsers(usersData);
       } catch (error) {
-        console.error("Error fetching users:", error)
+        console.error("Error fetching users:", error);
         toast({
           title: "Error",
           description: "Failed to load community members.",
           variant: "destructive",
-        })
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchUsers()
-  }, [user, toast])
+    fetchUsers();
+  }, [user, toast, db])
 
   useEffect(() => {
     if (users.length === 0) return

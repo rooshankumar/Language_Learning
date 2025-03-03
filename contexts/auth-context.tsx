@@ -45,6 +45,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Import Firebase auth only on client side
     import("@/lib/firebase").then(({ auth: clientAuth, db: clientDb }) => {
+      // Set persistence to LOCAL to persist authentication between sessions
+      import("firebase/auth").then(({ browserLocalPersistence, setPersistence }) => {
+        setPersistence(clientAuth, browserLocalPersistence)
+          .then(() => {
+            console.log("Auth persistence set to LOCAL");
+          })
+          .catch((error) => {
+            console.error("Error setting auth persistence:", error);
+          });
+      });
+      
       setAuth(clientAuth);
       setDb(clientDb);
     });

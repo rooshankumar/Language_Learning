@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // Added import for Link component
 import { useAuth } from "@/contexts/auth-context";
 import { AppShell } from "@/components/app-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { X, Home, ArrowLeft } from "lucide-react"; // Added icons
 
 const languages = [
   "English", "Spanish", "French", "German", "Italian", "Portuguese", "Russian",
@@ -242,6 +243,20 @@ export default function ProfilePage() {
       <AppShell>
         <div className="relative z-10 flex justify-center items-center min-h-[calc(100vh-4rem)] p-4">
           <div className="w-full max-w-4xl">
+            <div className="w-full mb-6 flex justify-between items-center"> {/* Added navigation buttons */}
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
+                  <ArrowLeft className="h-5 w-5" />
+                  <span className="sr-only">Back to Home</span>
+                </Button>
+              </Link>
+              <Link href="/">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Home className="h-4 w-4" />
+                  <span>Home</span>
+                </Button>
+              </Link>
+            </div>
             <h1 className="text-3xl font-bold mb-6 text-center">Your Profile</h1>
 
             <Tabs defaultValue="general" className="w-full">
