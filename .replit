@@ -20,7 +20,7 @@ localPort = 3002
 externalPort = 80
 
 [workflows]
-runButton = "Next.js App"
+runButton = "Dev"
 
 [[workflows.workflow]]
 name = "Start Dev Server"
@@ -56,6 +56,14 @@ args = "node server.js"
 
 [[workflows.workflow]]
 name = "Next.js App"
+author = 40166181
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Dev"
 author = 40166181
 
 [[workflows.workflow.tasks]]
