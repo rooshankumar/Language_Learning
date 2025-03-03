@@ -57,26 +57,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Import Firebase auth only on client side
         const { auth: clientAuth, db: clientDb } = await import("@/lib/firebase");
-        // Set persistence to LOCAL to persist authentication between sessions
-        const { browserLocalPersistence, setPersistence } = await import("firebase/auth");
         
-        // Ensure clientAuth is not empty (server-side stub)
-        if (clientAuth && clientAuth.setPersistence) {
-          await setPersistence(clientAuth, browserLocalPersistence);
-          console.log("Auth persistence set to LOCAL");
+        if (!clientAuth) {
+          console.error("Firebase Auth could not be initialized");
+          setError("Authentication service could not be initialized. Please refresh the page or try again later.");
+          setLoading(false);
+          return;
+        }
+        
+        // Set persistence to LOCAL to persist authentication between sessions
+        try {
+          const { browserLocalPersistence, setPersistence } = await import("firebase/auth");
           
-          // Check for stored trust device preference
-          const trustDevice = localStorage.getItem("trust_device") === "true";
-          if (trustDevice) {
-            console.log("Using trusted device persistence");
-            // We could add additional persistence options here
+          // Ensure clientAuth is not empty (server-side stub)
+          if (clientAuth && clientAuth.setPersistence) {
+            await setPersistence(clientAuth, browserLocalPersistence);
+            console.log("Auth persistence set to LOCAL");
+            
+            // Check for stored trust device preference
+            const trustDevice = localStorage.getItem("trust_device") === "true";
+            if (trustDevice) {
+              console.log("Using trusted device persistence");
+              // We could add additional persistence options here
+            }
           }
+        } catch (persistenceError) {
+          console.error("Error setting auth persistence:", persistenceError);
+          // Continue anyway, this is not critical
         }
         
         setAuth(clientAuth);
         setDb(clientDb);
       } catch (error) {
         console.error("Error initializing auth:", error);
+        setError("Failed to initialize authentication. Please refresh the page.");
+        setLoading(false);
       }
     };
     
@@ -120,11 +135,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [auth]);
 
+  // Helper function to validate email format
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   // 🔹 Sign In (Email & Password)
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
+
+      if (!isValidEmail(email)) {
+        setError("Please enter a valid email address");
+        throw new Error("Invalid email format");
+      }
 
       if (!auth) {
         console.error("Authentication not initialized. Check Firebase configuration.");
@@ -164,6 +190,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
+
+      if (!isValidEmail(email)) {
+        setError("Please enter a valid email address");
+        throw new Error("Invalid email format");
+      }
 
       if (!auth || !db) {
         console.error("Authentication or database not initialized.");
@@ -460,6 +491,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
+      
+      if (!isValidEmail(email)) {
+        setError("Please enter a valid email address");
+        throw new Error("Invalid email format");
+      }
+      
       await sendPasswordResetEmail(auth, email);
     } catch (error: any) {
       console.error("Reset password error:", error);

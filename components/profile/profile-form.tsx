@@ -81,6 +81,27 @@ export function ProfileForm({ user, onComplete }: ProfileFormProps) {
     setIsLoading(true)
 
     try {
+      // Validate required fields based on your workflow requirements
+      if (!nativeLanguage) {
+        toast({
+          title: "Error",
+          description: "Please select your native language",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
+      if (!learningLanguage) {
+        toast({
+          title: "Error",
+          description: "Please select at least one language you're learning",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
       await updateUserProfile({
         nativeLanguage,
         learningLanguage,

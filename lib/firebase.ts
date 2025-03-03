@@ -25,7 +25,7 @@ let auth;
 let db;
 
 // Check if we're in a browser environment
-const isBrowser = typeof window !== 'undefined';
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
 
 // Check if we have the minimum required config
 const hasMinConfig = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
