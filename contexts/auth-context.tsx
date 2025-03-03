@@ -252,6 +252,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isNewUser: isNewUser
         }, { merge: true });
         console.log("Google user data saved to Firestore");
+        
+        // If this is a new user, we'll want to redirect to onboarding
+        if (isNewUser) {
+          router.push("/onboarding");
+        } else {
+          router.push("/");
+        }
       } catch (firestoreError) {
         console.error("Failed to save Google user data to Firestore:", firestoreError);
         // Continue anyway since auth is successful

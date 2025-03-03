@@ -32,6 +32,7 @@ export default function SignUp() {
         description: "Let's set up your profile now.",
         variant: "default",
       })
+      // Ensure we redirect to onboarding after sign up
       router.push("/onboarding")
     } catch (error) {
       toast({

@@ -1,23 +1,42 @@
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { doc, updateDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
+
+const languages = [
+  "English", "Spanish", "French", "German", "Italian", "Portuguese", "Russian",
+  "Chinese", "Japanese", "Korean", "Arabic", "Hindi", "Bengali", "Dutch",
+  "Greek", "Hebrew", "Turkish", "Swedish", "Polish", "Vietnamese", "Thai"
+];
+
+const interestOptions = [
+  "Music", "Movies", "Books", "Travel", "Food", "Sports", "Technology",
+  "Art", "Photography", "Gaming", "Fitness", "Fashion", "Nature",
+  "Politics", "Science", "History", "Business", "Education",
+];
 
 export default function Onboarding() {
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+
   const [step, setStep] = useState(1);
-  const [preferences, setPreferences] = useState({
-    interests: [],
-    experience: "",
-    goals: []
-  });
+  const [nativeLanguages, setNativeLanguages] = useState<string[]>([]);
+  const [learningLanguages, setLearningLanguages] = useState<string[]>([]);
+  const [proficiency, setProficiency] = useState("beginner");
+  const [interests, setInterests] = useState<string[]>([]);
+  const [bio, setBio] = useState("");
+  const [age, setAge] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handle user not being authenticated
   if (!user) {
@@ -34,261 +53,110 @@ export default function Onboarding() {
     );
   }
 
-  const handleComplete = async () => {
-    try {
-      // Safe check for user and db
-      if (!user || !db) {
-        console.error("User or database not available");
-        return;
-      }
-
-      // For development mock environment
-      if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        console.log("Mock onboarding complete:", preferences);
-        router.push("/");
-        return;
-      }
-
-      // For production environment
-      const userDocRef = doc(db, "users", user.uid);
-      
-      // Update user preferences in Firestore
-      await setDoc(userDocRef, {
-        preferences,
-        onboardingCompleted: true,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      
-      router.push("/");
-    } catch (error) {
-      console.error("Error saving preferences:", error);
+  const handleAddNativeLanguage = (language: string) => {
+    if (!nativeLanguages.includes(language) && nativeLanguages.length < 3) {
+      setNativeLanguages([...nativeLanguages, language]);
+    } else if (nativeLanguages.length >= 3) {
+      toast({
+        title: "Maximum languages reached",
+        description: "You can select up to 3 native languages.",
+        variant: "destructive",
+      });
     }
   };
 
-  // Steps for onboarding process
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-medium">Welcome! Let's get to know you better</h2>
-            <p>Select your interests:</p>
-            {/* Interest selection UI here */}
-            <div className="flex flex-wrap gap-2">
-              {["Technology", "Science", "Art", "Music", "Sports", "Travel"].map((interest) => (
-                <Button
-                  key={interest}
-                  variant={preferences.interests.includes(interest) ? "default" : "outline"}
-                  onClick={() => {
-                    setPreferences(prev => ({
-                      ...prev,
-                      interests: prev.interests.includes(interest)
-                        ? prev.interests.filter(i => i !== interest)
-                        : [...prev.interests, interest]
-                    }));
-                  }}
-                  className="m-1"
-                >
-                  {interest}
-                </Button>
-              ))}
-            </div>
-            <Button onClick={() => setStep(2)} className="mt-4">Next</Button>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-medium">What's your experience level?</h2>
-            <div className="space-y-2">
-              {["Beginner", "Intermediate", "Advanced"].map((level) => (
-                <Button
-                  key={level}
-                  variant={preferences.experience === level ? "default" : "outline"}
-                  onClick={() => setPreferences(prev => ({ ...prev, experience: level }))}
-                  className="w-full justify-start"
-                >
-                  {level}
-                </Button>
-              ))}
-            </div>
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-              <Button onClick={() => setStep(3)}>Next</Button>
-            </div>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-medium">What are your goals?</h2>
-            <div className="flex flex-wrap gap-2">
-              {["Learn new skills", "Meet people", "Build projects", "Find mentorship"].map((goal) => (
-                <Button
-                  key={goal}
-                  variant={preferences.goals.includes(goal) ? "default" : "outline"}
-                  onClick={() => {
-                    setPreferences(prev => ({
-                      ...prev,
-                      goals: prev.goals.includes(goal)
-                        ? prev.goals.filter(g => g !== goal)
-                        : [...prev.goals, goal]
-                    }));
-                  }}
-                  className="m-1"
-                >
-                  {goal}
-                </Button>
-              ))}
-            </div>
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-              <Button onClick={handleComplete}>Complete</Button>
-            </div>
-          </div>
-        );
-      default:
-        return null;
+  const handleRemoveNativeLanguage = (language: string) => {
+    setNativeLanguages(nativeLanguages.filter((lang) => lang !== language));
+  };
+
+  const handleAddLearningLanguage = (language: string) => {
+    if (!learningLanguages.includes(language) && learningLanguages.length < 5) {
+      setLearningLanguages([...learningLanguages, language]);
+    } else if (learningLanguages.length >= 5) {
+      toast({
+        title: "Maximum languages reached",
+        description: "You can select up to 5 learning languages.",
+        variant: "destructive",
+      });
     }
   };
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md p-6">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold">Let's set up your profile</h1>
-          <p className="text-muted-foreground">Step {step} of 3</p>
-        </div>
-        {renderStep()}
-      </Card>
-    </div>
-  );
-}
-
-"use client"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/components/ui/use-toast"
-import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
-
-const languages = [
-  "English",
-  "Spanish",
-  "French",
-  "German",
-  "Italian",
-  "Portuguese",
-  "Russian",
-  "Japanese",
-  "Korean",
-  "Chinese",
-  "Arabic",
-  "Hindi",
-]
-
-const interestOptions = [
-  "Music",
-  "Movies",
-  "Books",
-  "Travel",
-  "Food",
-  "Sports",
-  "Technology",
-  "Art",
-  "Photography",
-  "Gaming",
-  "Fitness",
-  "Fashion",
-  "Nature",
-  "Politics",
-  "Science",
-  "History",
-  "Business",
-  "Education",
-]
-
-export default function Onboarding() {
-  const { user, updateUserProfile } = useAuth()
-  const router = useRouter()
-  const { toast } = useToast()
-
-  const [step, setStep] = useState(1)
-  const [nativeLanguage, setNativeLanguage] = useState("")
-  const [learningLanguage, setLearningLanguage] = useState("")
-  const [proficiency, setProficiency] = useState("beginner")
-  const [interests, setInterests] = useState<string[]>([])
-  const [bio, setBio] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const handleRemoveLearningLanguage = (language: string) => {
+    setLearningLanguages(learningLanguages.filter((lang) => lang !== language));
+  };
 
   const handleAddInterest = (interest: string) => {
     if (!interests.includes(interest)) {
-      setInterests([...interests, interest])
+      setInterests([...interests, interest]);
     }
-  }
+  };
 
   const handleRemoveInterest = (interest: string) => {
-    setInterests(interests.filter((i) => i !== interest))
-  }
+    setInterests(interests.filter((i) => i !== interest));
+  };
 
   const handleNext = () => {
-    if (step === 1 && (!nativeLanguage || !learningLanguage)) {
+    if (step === 1 && nativeLanguages.length === 0) {
       toast({
-        title: "Please select languages",
-        description: "You need to select both your native and learning languages.",
+        title: "Please select at least one native language",
+        description: "You need to select at least one native language to continue.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setStep(step + 1)
-  }
+    if (step === 1 && learningLanguages.length === 0) {
+      toast({
+        title: "Please select a learning language",
+        description: "You need to select at least one language you're learning.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStep(step + 1);
+  };
 
   const handleBack = () => {
-    setStep(step - 1)
-  }
+    setStep(step - 1);
+  };
 
   const handleSubmit = async () => {
-    if (!user) return
+    if (!user) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       await updateUserProfile({
-        nativeLanguage,
-        learningLanguage,
+        nativeLanguages,
+        learningLanguages,
+        proficiency,
         interests,
         bio,
-      })
+        age: age ? parseInt(age) : null,
+        onboardingCompleted: true,
+      });
 
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully set up.",
-      })
+      });
 
-      router.push("/")
+      router.push("/");
     } catch (error) {
       toast({
         title: "Error updating profile",
         description: "Please try again later.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 gradient-bg">
-      <Card className="w-full max-w-lg glass-effect">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+      <Card className="w-full max-w-lg shadow-lg bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">Set Up Your Profile</CardTitle>
           <CardDescription className="text-center">
@@ -299,29 +167,14 @@ export default function Onboarding() {
           {step === 1 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="native-language">Native Language</Label>
-                <Select value={nativeLanguage} onValueChange={setNativeLanguage}>
-                  <SelectTrigger id="native-language">
-                    <SelectValue placeholder="Select your native language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((language) => (
-                      <SelectItem key={language} value={language}>
-                        {language}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="learning-language">Language You're Learning</Label>
-                <Select value={learningLanguage} onValueChange={setLearningLanguage}>
-                  <SelectTrigger id="learning-language">
-                    <SelectValue placeholder="Select language you're learning" />
+                <Label>Native Languages (up to 3)</Label>
+                <Select onValueChange={handleAddNativeLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your native languages" />
                   </SelectTrigger>
                   <SelectContent>
                     {languages
-                      .filter((lang) => lang !== nativeLanguage)
+                      .filter(language => !nativeLanguages.includes(language))
                       .map((language) => (
                         <SelectItem key={language} value={language}>
                           {language}
@@ -329,23 +182,63 @@ export default function Onboarding() {
                       ))}
                   </SelectContent>
                 </Select>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {nativeLanguages.map((language) => (
+                    <Badge key={language} variant="secondary" className="px-3 py-1">
+                      {language}
+                      <button
+                        onClick={() => handleRemoveNativeLanguage(language)}
+                        className="ml-2 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
               </div>
               <div className="space-y-2">
-                <Label>Proficiency Level</Label>
-                <RadioGroup value={proficiency} onValueChange={setProficiency}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="beginner" id="beginner" />
-                    <Label htmlFor="beginner">Beginner</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="intermediate" id="intermediate" />
-                    <Label htmlFor="intermediate">Intermediate</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="advanced" id="advanced" />
-                    <Label htmlFor="advanced">Advanced</Label>
-                  </div>
-                </RadioGroup>
+                <Label>Languages You're Learning (up to 5)</Label>
+                <Select onValueChange={handleAddLearningLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select languages you're learning" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages
+                      .filter(language => !learningLanguages.includes(language) && !nativeLanguages.includes(language))
+                      .map((language) => (
+                        <SelectItem key={language} value={language}>
+                          {language}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {learningLanguages.map((language) => (
+                    <Badge key={language} variant="default" className="px-3 py-1">
+                      {language}
+                      <button
+                        onClick={() => handleRemoveLearningLanguage(language)}
+                        className="ml-2 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="proficiency">Proficiency Level</Label>
+                <Select value={proficiency} onValueChange={setProficiency}>
+                  <SelectTrigger id="proficiency">
+                    <SelectValue placeholder="Select your proficiency level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="fluent">Fluent</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -354,75 +247,71 @@ export default function Onboarding() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label>Select Your Interests</Label>
-                <p className="text-sm text-muted-foreground">
-                  Choose topics you'd like to discuss with language partners
-                </p>
-                <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="flex flex-wrap gap-2">
                   {interestOptions.map((interest) => (
                     <Button
                       key={interest}
-                      type="button"
                       variant={interests.includes(interest) ? "default" : "outline"}
-                      className="justify-start"
-                      onClick={() => handleAddInterest(interest)}
+                      onClick={() => {
+                        if (interests.includes(interest)) {
+                          handleRemoveInterest(interest);
+                        } else {
+                          handleAddInterest(interest);
+                        }
+                      }}
+                      className="m-1"
                     >
                       {interest}
                     </Button>
                   ))}
                 </div>
               </div>
-              {interests.length > 0 && (
-                <div>
-                  <Label>Selected Interests</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {interests.map((interest) => (
-                      <Badge key={interest} variant="secondary" className="pl-2 pr-1 py-1">
-                        {interest}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-4 w-4 ml-1"
-                          onClick={() => handleRemoveInterest(interest)}
-                        >
-                          <X className="h-3 w-3" />
-                          <span className="sr-only">Remove {interest}</span>
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
           {step === 3 && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="bio">About You</Label>
-                <p className="text-sm text-muted-foreground">
-                  Write a short bio to introduce yourself to potential language partners
-                </p>
+                <Label htmlFor="age">Age (Optional)</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  placeholder="Enter your age"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  min="13"
+                  max="120"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
-                  placeholder="Hi! I'm learning Spanish to travel through South America next year..."
+                  placeholder="Tell us about yourself..."
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  rows={5}
+                  rows={4}
+                  className="resize-none"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {bio.length}/500 characters
+                </p>
               </div>
             </div>
           )}
         </CardContent>
         <CardFooter className="flex justify-between">
           {step > 1 ? (
-            <Button variant="outline" onClick={handleBack}>
+            <Button variant="outline" onClick={handleBack} disabled={isLoading}>
               Back
             </Button>
           ) : (
             <div></div>
           )}
           {step < 3 ? (
-            <Button onClick={handleNext}>Next</Button>
+            <Button onClick={handleNext} disabled={isLoading}>
+              Next
+            </Button>
           ) : (
             <Button onClick={handleSubmit} disabled={isLoading}>
               {isLoading ? "Saving..." : "Complete Setup"}
@@ -431,6 +320,5 @@ export default function Onboarding() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
-
