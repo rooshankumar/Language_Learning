@@ -137,7 +137,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError("Service is not available. Please try again later.");
         throw new Error("Authentication or database not initialized.");
       }
+      
+      // In development mode with mock auth, handle specially
+      if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        console.log("Using mock sign-up flow");
+        
+        // Create a mock user
+        const mockUid = `mock-uid-${Date.now()}`;
+        const mockUser = {
+          uid: mockUid,
+          email: email,
+          displayName: name || "Anonymous",
+          emailVerified: true,
+          isAnonymous: false,
+          photoURL: "/placeholder-user.jpg"
+        } as unknown as User;
+        
+        try {
+          // Set mock user data in Firestore
+          await setDoc(doc(db, "users", mockUid), {
+            uid: mockUid,
+            name: name || "Anonymous",
+            email,
+            createdAt: new Date().toISOString(),
+          });
+        } catch (e) {
+          console.error("Mock Firestore error:", e);
+          // Continue anyway
+        }
+        
+        setUser(mockUser);
+        router.push("/onboarding");
+        return;
+      }
 
+      // Real implementation for production
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
       console.log("User created successfully:", newUser.uid);
@@ -197,6 +231,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Authentication or database not initialized.");
       }
 
+      // In development mode with mock auth, directly simulate successful login
+      if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        console.log("Using mock Google sign-in");
+        
+        // Create a mock user similar to what we'd get from Google
+        const googleUser = {
+          uid: `mock-uid-${Date.now()}`,
+          displayName: "Mock Google User",
+          email: "mock-google-user@example.com",
+          photoURL: "/placeholder-user.jpg",
+        };
+        
+        try {
+          // Set mock user data in Firestore
+          await setDoc(doc(db, "users", googleUser.uid), {
+            uid: googleUser.uid,
+            name: googleUser.displayName,
+            email: googleUser.email,
+            createdAt: new Date().toISOString(),
+          }, { merge: true });
+        } catch (e) {
+          console.error("Mock Firestore error:", e);
+          // Continue anyway
+        }
+        
+        setUser(googleUser as unknown as User);
+        router.push("/");
+        return;
+      }
+      
+      // Real implementation for production
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;

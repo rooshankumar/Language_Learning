@@ -60,8 +60,17 @@ if (hasAllConfig) {
   // Create mock services
   auth = createMockAuth();
   db = createMockFirestore();
-  googleProvider = {}; // Mock provider, just an empty object
-  githubProvider = {}; // Mock provider, just an empty object
+  // Create proper mock providers that won't cause errors
+  googleProvider = {
+    providerId: 'google.com',
+    addScope: () => {},
+    setCustomParameters: () => {}
+  }; 
+  githubProvider = {
+    providerId: 'github.com',
+    addScope: () => {},
+    setCustomParameters: () => {}
+  };
 
   console.log('✅ Mock Firebase services initialized for development');
 }

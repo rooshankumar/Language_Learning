@@ -51,6 +51,20 @@ export const createMockAuth = () => {
     signOut: async () => {
       currentUser = null;
       listeners.forEach(callback => callback(currentUser));
+    },
+    sendPasswordResetEmail: async () => Promise.resolve(),
+    updateProfile: async () => Promise.resolve(),
+    
+    // Add missing methods needed by Firebase Auth
+    _getRecaptchaConfig: () => null,
+    tenantId: null,
+    settings: {
+      appVerificationDisabledForTesting: true
+    },
+    app: {
+      options: {
+        apiKey: 'mock-api-key'
+      }
     }
   };
 
