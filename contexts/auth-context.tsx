@@ -137,8 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Helper function to validate email format
   const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return email && emailRegex.test(email.trim());
   };
 
   // 🔹 Sign In (Email & Password)
