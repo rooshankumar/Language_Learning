@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 
 export default function SignUp() {
@@ -89,13 +90,13 @@ export default function SignUp() {
     try {
       // Format phone number if needed
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`
-
-      const verifyId = await signInWithPhone(formattedPhone, 'recaptcha-container')
-      setVerificationId(verifyId)
+      
+      const verificationId = await signInWithPhone(formattedPhone)
+      setVerificationId(verificationId)
       setShowCodeInput(true)
       toast({
         title: "Verification code sent",
-        description: "Please check your phone for the verification code",
+        description: "Please check your phone for the verification code.",
         variant: "default",
       })
     } catch (error) {
@@ -119,7 +120,7 @@ export default function SignUp() {
     try {
       await confirmPhoneCode(verificationId, verificationCode)
       toast({
-        title: "Account created successfully",
+        title: "Phone verified successfully",
         description: "Let's set up your profile now.",
         variant: "default",
       })
@@ -158,21 +159,20 @@ export default function SignUp() {
               <AlertDescription>{localError || authError}</AlertDescription>
             </Alert>
           )}
-
-          <Tabs defaultValue="email" className="w-full" onValueChange={setAuthMethod}>
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+          
+          <Tabs defaultValue="email" className="space-y-4" onValueChange={setAuthMethod}>
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="email">Email</TabsTrigger>
               <TabsTrigger value="phone">Phone</TabsTrigger>
             </TabsList>
-
+            
             <TabsContent value="email">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
                     id="name"
-                    type="text"
-                    placeholder="Enter your name"
+                    placeholder="Your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -235,7 +235,7 @@ export default function SignUp() {
                 </Button>
               </form>
             </TabsContent>
-
+            
             <TabsContent value="phone">
               {!showCodeInput ? (
                 <form onSubmit={handlePhoneSignUp} className="space-y-4">
@@ -274,8 +274,7 @@ export default function SignUp() {
                     <Label htmlFor="code">Verification Code</Label>
                     <Input
                       id="code"
-                      type="text"
-                      placeholder="Enter 6-digit code"
+                      placeholder="Enter verification code"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       required
@@ -294,31 +293,23 @@ export default function SignUp() {
                         Verifying...
                       </>
                     ) : (
-                      "Verify Code"
+                      "Verify code"
                     )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => setShowCodeInput(false)}
-                    className="w-full text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
-                  >
-                    Try different number
                   </Button>
                 </form>
               )}
             </TabsContent>
           </Tabs>
-
+          
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <div className="w-full border-t"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2">Or continue with</span>
+              <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">Or continue with</span>
             </div>
           </div>
-
+          
           <Button 
             variant="outline" 
             className="w-full" 
