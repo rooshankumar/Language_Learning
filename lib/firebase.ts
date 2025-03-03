@@ -49,9 +49,17 @@ if (hasMinConfig) {
 
     console.log('✅ Firebase services initialized with real config');
   } else {
-    // Server-side stub for auth - don't try to initialize actual Firebase Auth
-    auth = null as any;
-    console.log('🔶 Firebase Auth skipped on server-side');
+    // Server-side stub for auth - create a stub object for server rendering
+    auth = {
+      currentUser: null,
+      onAuthStateChanged: () => () => {},
+      // Add other required methods as empty functions
+      signInWithEmailAndPassword: async () => ({ user: null }),
+      createUserWithEmailAndPassword: async () => ({ user: null }),
+      signOut: async () => {},
+      // ... any other methods your app uses
+    } as any;
+    console.log('🔶 Firebase Auth stubbed on server-side');
   }
 } else {
   if (process.env.NODE_ENV === 'development') {
