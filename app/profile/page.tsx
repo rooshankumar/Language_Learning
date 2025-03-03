@@ -10,17 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { LanguageProgress } from "@/components/profile/language-progress";
-import {X} from "lucide-react";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X } from "lucide-react";
 
 const languages = [
   "English", "Spanish", "French", "German", "Italian", "Portuguese", "Russian",
-  "Chinese", "Japanese", "Korean", "Arabic", "Hindi", "Bengali", "Dutch",
-  "Greek", "Hebrew", "Turkish", "Swedish", "Polish", "Vietnamese", "Thai"
+  "Japanese", "Korean", "Chinese", "Arabic", "Hindi", "Dutch", "Swedish", "Greek",
 ];
 
 const interestOptions = [
@@ -56,85 +53,14 @@ export default function ProfilePage() {
     setName(user.displayName || "");
     setPhotoURL(user.photoURL || "/placeholder-user.jpg");
 
-    // Fetch additional user data from Firestore (simplified for brevity)
-    const fetchUserData = async () => {
-      try {
-        // In this example, we're using userData stored in auth context
-        // In a real implementation, you'd fetch from Firestore
-        if (user) {
-          // Simulate fetching user data 
-          // This should be replaced with actual Firestore fetch
-          setTimeout(() => {
-            const mockUserData = {
-              bio: user.bio || "",
-              age: user.age || "",
-              nativeLanguages: user.nativeLanguages || [],
-              learningLanguages: user.learningLanguages || [],
-              interests: user.interests || [],
-            };
-            setUserData(mockUserData);
-            setBio(mockUserData.bio || "");
-            setAge(mockUserData.age ? String(mockUserData.age) : "");
-            setNativeLanguages(mockUserData.nativeLanguages || []);
-            setLearningLanguages(mockUserData.learningLanguages || []);
-            setInterests(mockUserData.interests || []);
-          }, 500);
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast({
-          title: "Error loading profile",
-          description: "Could not load your profile data.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchUserData();
-  }, [user, router, toast]);
-
-  // Handle adding/removing native languages (max 3)
-  const handleAddNativeLanguage = (language: string) => {
-    if (!nativeLanguages.includes(language) && nativeLanguages.length < 3) {
-      setNativeLanguages([...nativeLanguages, language]);
-    } else if (nativeLanguages.length >= 3) {
-      toast({
-        title: "Maximum languages reached",
-        description: "You can select up to 3 native languages.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleRemoveNativeLanguage = (language: string) => {
-    setNativeLanguages(nativeLanguages.filter((lang) => lang !== language));
-  };
-
-  // Handle adding/removing learning languages (max 5)
-  const handleAddLearningLanguage = (language: string) => {
-    if (!learningLanguages.includes(language) && learningLanguages.length < 5) {
-      setLearningLanguages([...learningLanguages, language]);
-    } else if (learningLanguages.length >= 5) {
-      toast({
-        title: "Maximum languages reached",
-        description: "You can select up to 5 learning languages.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleRemoveLearningLanguage = (language: string) => {
-    setLearningLanguages(learningLanguages.filter((lang) => lang !== language));
-  };
-
-  // Handle interests
-  const handleToggleInterest = (interest: string) => {
-    if (interests.includes(interest)) {
-      setInterests(interests.filter(i => i !== interest));
-    } else {
-      setInterests([...interests, interest]);
-    }
-  };
+    // In a real app, you would fetch additional user data from Firestore
+    // and populate the other fields
+    if (user.nativeLanguages) setNativeLanguages(user.nativeLanguages);
+    if (user.learningLanguages) setLearningLanguages(user.learningLanguages);
+    if (user.bio) setBio(user.bio);
+    if (user.age) setAge(user.age.toString());
+    if (user.interests) setInterests(user.interests);
+  }, [user, router]);
 
   // Handle profile image upload
   const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,141 +173,152 @@ export default function ProfilePage() {
     });
   };
 
-  // Handle sign out
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      router.push("/sign-in");
-    } catch (error) {
-      console.error("Sign out error:", error);
-      toast({
-        title: "Sign out failed",
-        description: "There was an error signing out.",
-        variant: "destructive",
-      });
+  // Handle adding a native language
+  const handleAddNativeLanguage = (language: string) => {
+    if (!nativeLanguages.includes(language)) {
+      setNativeLanguages([...nativeLanguages, language]);
     }
   };
 
-  if (!user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Card className="w-full max-w-md p-6">
-          <h1 className="mb-4 text-xl font-semibold">Loading profile...</h1>
-        </Card>
-      </div>
-    );
-  }
+  // Handle removing a native language
+  const handleRemoveNativeLanguage = (language: string) => {
+    setNativeLanguages(nativeLanguages.filter(lang => lang !== language));
+  };
+
+  // Handle adding a learning language
+  const handleAddLearningLanguage = (language: string) => {
+    if (!learningLanguages.includes(language)) {
+      setLearningLanguages([...learningLanguages, language]);
+    }
+  };
+
+  // Handle removing a learning language
+  const handleRemoveLearningLanguage = (language: string) => {
+    setLearningLanguages(learningLanguages.filter(lang => lang !== language));
+  };
+
+  // Handle adding an interest
+  const handleAddInterest = (interest: string) => {
+    if (!interests.includes(interest)) {
+      setInterests([...interests, interest]);
+    }
+  };
+
+  // Handle removing an interest
+  const handleRemoveInterest = (interest: string) => {
+    setInterests(interests.filter(int => int !== interest));
+  };
 
   return (
     <AppShell>
-      <div className="space-y-6 p-4 md:p-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Profile Settings</h2>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences.
-          </p>
-        </div>
-        <div>
-          <Tabs defaultValue="general">
-            <TabsList className="grid w-full grid-cols-4">
+      {/* Background Video */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          className="absolute min-h-full min-w-full object-cover opacity-20"
+        >
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-night-sky-with-stars-at-a-calm-lake-time-lapse-53-large.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-sm"></div>
+      </div>
+
+      <div className="relative z-10 flex justify-center items-center min-h-[calc(100vh-4rem)] p-4">
+        <div className="w-full max-w-4xl">
+          <h1 className="text-3xl font-bold mb-6 text-center">Your Profile</h1>
+
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid grid-cols-4 mb-6">
               <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="language">Languages</TabsTrigger>
+              <TabsTrigger value="languages">Languages</TabsTrigger>
               <TabsTrigger value="interests">Interests</TabsTrigger>
-              <TabsTrigger value="account">Account</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
             {/* General Tab */}
             <TabsContent value="general">
-              <Card>
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>General Information</CardTitle>
-                  <CardDescription>
-                    Update your personal information.
-                  </CardDescription>
+                  <CardDescription>Update your profile information and photo.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Profile Picture */}
-                  <div>
-                    <h3 className="font-medium mb-2">Profile Picture</h3>
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-24 w-24 overflow-hidden rounded-full">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="md:w-1/3 flex flex-col items-center justify-start space-y-4">
+                      <div className="relative h-48 w-48 rounded-full overflow-hidden border-4 border-primary/20">
                         <img
-                          src={photoURL}
+                          src={photoURL || "/placeholder-user.jpg"}
                           alt="Profile"
                           className="h-full w-full object-cover"
                         />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Label
+                            htmlFor="profile-image"
+                            className="cursor-pointer text-white font-medium text-center p-2"
+                          >
+                            Change Photo
+                          </Label>
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="profile-picture" className="cursor-pointer">
-                          <div className="flex items-center mb-2">
-                            <Button size="sm" type="button">
-                              Upload New Image
-                            </Button>
-                          </div>
-                        </Label>
+                      <Input
+                        id="profile-image"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfileImageUpload}
+                      />
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => document.getElementById('profile-image')?.click()}
+                      >
+                        Upload New Photo
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Recommended: Square image, at least 400x400px
+                      </p>
+                    </div>
+
+                    <div className="md:w-2/3 space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Display Name</Label>
                         <Input
-                          id="profile-picture"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleProfileImageUpload}
+                          id="name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Your display name"
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Recommended: Square image, at least 400x400px
-                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="age">Age</Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          placeholder="Your age"
+                          min="13"
+                          max="120"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="bio">About Me</Label>
+                        <Textarea
+                          id="bio"
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          placeholder="Tell others about yourself"
+                          rows={5}
+                        />
                       </div>
                     </div>
                   </div>
-
-                  {/* Display Name */}
-                  <div>
-                    <Label htmlFor="display-name">Display Name</Label>
-                    <Input
-                      id="display-name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your display name"
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Age */}
-                  <div>
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      placeholder="Your age (optional)"
-                      className="mt-1"
-                      min="13"
-                      max="120"
-                    />
-                  </div>
-
-                  {/* Bio */}
-                  <div>
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      placeholder="Tell others about yourself..."
-                      className="mt-1 min-h-[100px]"
-                      maxLength={500}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {bio.length}/500 characters
-                    </p>
-                  </div>
                 </CardContent>
-                <CardFooter>
-                  <Button 
-                    onClick={handleGeneralUpdate} 
-                    disabled={isLoading}
-                    className="ml-auto"
-                  >
+                <CardFooter className="flex justify-end">
+                  <Button onClick={handleGeneralUpdate} disabled={isLoading}>
                     {isLoading ? "Saving..." : "Save Changes"}
                   </Button>
                 </CardFooter>
@@ -389,111 +326,79 @@ export default function ProfilePage() {
             </TabsContent>
 
             {/* Languages Tab */}
-            <TabsContent value="language">
-              <Card>
+            <TabsContent value="languages">
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>Language Preferences</CardTitle>
-                  <CardDescription>
-                    Manage your native and learning languages.
-                  </CardDescription>
+                  <CardDescription>Update your native and learning languages.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Native Languages */}
-                  <div>
-                    <Label className="mb-2 inline-block">Native Languages (Max 3)</Label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {nativeLanguages.map((lang) => (
-                        <Badge key={lang} className="px-3 py-1">
-                          {lang}
+                  <div className="space-y-4">
+                    <Label>Native Languages</Label>
+                    <Select onValueChange={handleAddNativeLanguage}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Add a native language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages
+                          .filter(lang => !nativeLanguages.includes(lang))
+                          .map((language) => (
+                            <SelectItem key={language} value={language}>
+                              {language}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {nativeLanguages.map((language) => (
+                        <Badge key={language} variant="secondary" className="px-3 py-1.5 text-sm">
+                          {language}
                           <button
-                            type="button"
-                            className="ml-2"
-                            onClick={() => setNativeLanguages(nativeLanguages.filter(l => l !== lang))}
+                            onClick={() => handleRemoveNativeLanguage(language)}
+                            className="ml-2 text-muted-foreground hover:text-foreground"
                           >
-                            <X className="h-3 w-3" />
+                            <X size={14} />
                           </button>
                         </Badge>
                       ))}
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {languages
-                        .filter(lang => !nativeLanguages.includes(lang))
-                        .slice(0, 8) 
-                        .map(language => (
-                          <Button 
-                            key={language} 
-                            variant="outline" 
-                            className="justify-start"
-                            type="button"
-                            disabled={nativeLanguages.length >= 3}
-                            onClick={() => {
-                              if (!nativeLanguages.includes(language) && nativeLanguages.length < 3) {
-                                setNativeLanguages([...nativeLanguages, language]);
-                              }
-                            }}
-                          >
-                            {language}
-                          </Button>
-                        ))}
-                    </div>
-                    {nativeLanguages.length >= 3 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Maximum of 3 native languages reached.
-                      </p>
-                    )}
                   </div>
 
-                  {/* Learning Languages */}
-                  <div>
-                    <Label className="mb-2 inline-block">Learning Languages (Max 5)</Label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {learningLanguages.map((lang) => (
-                        <Badge key={lang} className="px-3 py-1">
-                          {lang}
+                  <div className="space-y-4">
+                    <Label>Learning Languages</Label>
+                    <Select onValueChange={handleAddLearningLanguage}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Add a language you're learning" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages
+                          .filter(lang => !learningLanguages.includes(lang) && !nativeLanguages.includes(lang))
+                          .map((language) => (
+                            <SelectItem key={language} value={language}>
+                              {language}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {learningLanguages.map((language) => (
+                        <Badge key={language} variant="secondary" className="px-3 py-1.5 text-sm">
+                          {language}
                           <button
-                            type="button"
-                            className="ml-2"
-                            onClick={() => setLearningLanguages(learningLanguages.filter(l => l !== lang))}
+                            onClick={() => handleRemoveLearningLanguage(language)}
+                            className="ml-2 text-muted-foreground hover:text-foreground"
                           >
-                            <X className="h-3 w-3" />
+                            <X size={14} />
                           </button>
                         </Badge>
                       ))}
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {languages
-                        .filter(lang => !learningLanguages.includes(lang) && !nativeLanguages.includes(lang))
-                        .slice(0, 8) 
-                        .map(language => (
-                          <Button 
-                            key={language} 
-                            variant="outline" 
-                            className="justify-start"
-                            type="button"
-                            disabled={learningLanguages.length >= 5}
-                            onClick={() => {
-                              if (!learningLanguages.includes(language) && !nativeLanguages.includes(language) && learningLanguages.length < 5) {
-                                setLearningLanguages([...learningLanguages, language]);
-                              }
-                            }}
-                          >
-                            {language}
-                          </Button>
-                        ))}
-                    </div>
-                    {learningLanguages.length >= 5 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Maximum of 5 learning languages reached.
-                      </p>
-                    )}
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Button 
-                    onClick={handleLanguageUpdate} 
-                    disabled={isLoading}
-                    className="ml-auto"
-                  >
+                <CardFooter className="flex justify-end">
+                  <Button onClick={handleLanguageUpdate} disabled={isLoading}>
                     {isLoading ? "Saving..." : "Save Languages"}
                   </Button>
                 </CardFooter>
@@ -502,75 +407,82 @@ export default function ProfilePage() {
 
             {/* Interests Tab */}
             <TabsContent value="interests">
-              <Card>
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>Your Interests</CardTitle>
-                  <CardDescription>
-                    Select topics you're interested in to find like-minded conversation partners.
-                  </CardDescription>
+                  <CardDescription>Select topics you're interested in.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {interestOptions.map((interest) => (
-                      <Button
-                        key={interest}
-                        variant={interests.includes(interest) ? "default" : "outline"}
-                        onClick={() => handleToggleInterest(interest)}
-                        className="m-1"
-                      >
-                        {interest}
-                      </Button>
-                    ))}
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <Label>Select Your Interests</Label>
+                    <Select onValueChange={handleAddInterest}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Add an interest" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {interestOptions
+                          .filter(interest => !interests.includes(interest))
+                          .map((interest) => (
+                            <SelectItem key={interest} value={interest}>
+                              {interest}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {interests.map((interest) => (
+                        <Badge key={interest} className="px-3 py-1.5 text-sm">
+                          {interest}
+                          <button
+                            onClick={() => handleRemoveInterest(interest)}
+                            className="ml-2 text-muted-foreground hover:text-foreground"
+                          >
+                            <X size={14} />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Button 
-                    onClick={handleInterestsUpdate} 
-                    disabled={isLoading}
-                    className="ml-auto"
-                  >
+                <CardFooter className="flex justify-end">
+                  <Button onClick={handleInterestsUpdate} disabled={isLoading}>
                     {isLoading ? "Saving..." : "Save Interests"}
                   </Button>
                 </CardFooter>
               </Card>
             </TabsContent>
 
-            {/* Account Tab */}
-            <TabsContent value="account">
-              <Card>
+            {/* Settings Tab */}
+            <TabsContent value="settings">
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>Account Settings</CardTitle>
-                  <CardDescription>
-                    Manage your account security and preferences.
-                  </CardDescription>
+                  <CardDescription>Manage your account preferences and security.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div>
-                    <h3 className="font-medium mb-2">Email</h3>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium">Email Address</h3>
+                    <p className="text-muted-foreground">{user?.email || "No email address"}</p>
                   </div>
 
-                  <div>
-                    <h3 className="font-medium mb-4">Account Actions</h3>
-                    <div className="space-y-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={handleSignOut}
-                        className="w-full sm:w-auto"
-                      >
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium">Account Security</h3>
+                    <div className="flex flex-col gap-2 md:flex-row">
+                      <Button variant="outline">Change Password</Button>
+                      <Button variant="outline">Enable Two-Factor Authentication</Button>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t">
+                    <h3 className="text-lg font-medium text-destructive mb-2">Danger Zone</h3>
+                    <div className="flex flex-col gap-2 md:flex-row">
+                      <Button variant="destructive" onClick={handleDeleteAccount}>
+                        Delete Account
+                      </Button>
+                      <Button variant="outline" onClick={handleSignOut}>
                         Sign Out
                       </Button>
-
-                      <div>
-                        <h4 className="text-sm font-medium mb-2 text-destructive">Danger Zone</h4>
-                        <Button 
-                          variant="destructive" 
-                          onClick={handleDeleteAccount}
-                          className="w-full sm:w-auto"
-                        >
-                          Delete Account
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </CardContent>
