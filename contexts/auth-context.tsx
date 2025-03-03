@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  
+
   // Check if Firebase auth is available - must be in useEffect due to SSR
   const [auth, setAuth] = useState<Auth | undefined>(undefined);
   const [db, setDb] = useState<Firestore | undefined>(undefined);
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log("Setting up auth state listener");
-    
+
     // Only set up the listener if auth is initialized
     if (!auth) {
       console.log("Auth not initialized yet or missing config");
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return; // Wait for auth to be initialized or for mock auth to be set up
     }
-    
+
     try {
       const unsubscribe = onAuthStateChanged(
         auth,
@@ -92,19 +92,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!auth) {
         console.error("Authentication not initialized. Check Firebase configuration.");
         setError("Authentication service is not available. Please try again later.");
         throw new Error("Authentication not initialized. Check Firebase configuration.");
       }
-      
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Sign in successful:", userCredential.user.uid);
       router.push("/");
     } catch (error: any) {
       console.error("Sign in error:", error);
-      
+
       // Provide more user-friendly error messages
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         setError("Invalid email or password. Please try again.");
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(error.message || "Failed to sign in. Please try again.");
       }
-      
+
       throw error;
     } finally {
       setLoading(false);
@@ -131,13 +131,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!auth || !db) {
         console.error("Authentication or database not initialized.");
         setError("Service is not available. Please try again later.");
         throw new Error("Authentication or database not initialized.");
       }
-      
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
       console.log("User created successfully:", newUser.uid);
@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push("/onboarding");
     } catch (error: any) {
       console.error("Sign up error:", error);
-      
+
       // Provide more user-friendly error messages
       if (error.code === 'auth/email-already-in-use') {
         setError("This email is already registered. Try signing in instead.");
@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(error.message || "Failed to create account. Please try again.");
       }
-      
+
       throw error;
     } finally {
       setLoading(false);
@@ -190,13 +190,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!auth || !db) {
         console.error("Authentication or database not initialized.");
         setError("Service is not available. Please try again later.");
         throw new Error("Authentication or database not initialized.");
       }
-      
+
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
@@ -220,7 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push("/"); // Redirect to home page after successful sign-in
     } catch (error: any) {
       console.error("Google sign in error:", error);
-      
+
       // Provide more user-friendly error messages
       if (error.code === 'auth/popup-closed-by-user') {
         setError("Sign-in was canceled. Please try again.");
@@ -231,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(error.message || "Failed to sign in with Google. Please try again.");
       }
-      
+
       throw error;
     } finally {
       setLoading(false);

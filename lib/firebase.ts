@@ -1,119 +1,69 @@
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { 
+  getAuth, 
+  connectAuthEmulator, 
+  GoogleAuthProvider, 
+  GithubAuthProvider 
+} from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { createMockAuth, createMockFirestore } from "./mock-auth";
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
-import { getStorage, FirebaseStorage } from "firebase/storage";
-import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
-
-// Ensure we have a valid config by checking each environment variable
-const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-const databaseURL = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
-const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
-const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
-const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
-
-// Log missing environment variables during development
-if (process.env.NODE_ENV === 'development') {
-  const missingVars = [
-    ['NEXT_PUBLIC_FIREBASE_API_KEY', apiKey],
-    ['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', authDomain],
-    ['NEXT_PUBLIC_FIREBASE_PROJECT_ID', projectId],
-    ['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET', storageBucket],
-    ['NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', messagingSenderId],
-    ['NEXT_PUBLIC_FIREBASE_APP_ID', appId],
-  ].filter(([_, value]) => !value);
-
-  if (missingVars.length > 0) {
-    console.warn(
-      '⚠️ Missing environment variables:',
-      missingVars.map(([name]) => name).join(', ')
-    );
-  }
-}
-
-// ✅ Firebase configuration using environment variables
+// Firebase configuration
 const firebaseConfig = {
-  apiKey,
-  authDomain,
-  databaseURL,
-  projectId,
-  storageBucket,
-  messagingSenderId,
-  appId,
-  measurementId,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Firebase services initialization
-let app: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let db: Firestore | undefined;
-let storage: FirebaseStorage | undefined;
-let analytics: Promise<Analytics | null> | undefined;
+// Check if all required Firebase config variables are present
+const hasAllConfig = Object.values(firebaseConfig).every(value => !!value);
 
-// Check if all required Firebase variables are present
-const hasRequiredConfig = apiKey && authDomain && projectId && storageBucket && 
-                         messagingSenderId && appId;
+// Initialize Firebase
+let firebaseApp;
+let auth;
+let db;
+let googleProvider;
+let githubProvider;
 
-// Import mock services for development mode
-import { mockAuth, mockFirestore, mockStorage } from './mock-auth';
+// Development mode check to catch issues during build
+const isDevelopment = process.env.NODE_ENV === 'development';
 
-// Only initialize Firebase if we're in a browser environment and have all required config
-if (typeof window !== 'undefined') {
-  try {
-    if (!hasRequiredConfig) {
-      console.error("❌ Missing required Firebase configuration variables");
-      // In development, we can continue with mock services
-      if (process.env.NODE_ENV === 'development') {
-        console.warn("💡 Using development mode with mock Firebase services.");
-        // Use mock services in development when Firebase config is missing
-        auth = mockAuth as unknown as Auth;
-        db = mockFirestore as unknown as Firestore;
-        storage = mockStorage as unknown as FirebaseStorage;
-        console.log("✅ Mock Firebase services initialized for development");
-      }
-    } else if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
-      console.log("✅ Firebase initialized successfully");
-      
-      auth = getAuth(app);
-      db = getFirestore(app);
-      storage = getStorage(app);
-      analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
-    } else {
-      app = getApp();
-      auth = getAuth(app);
-      db = getFirestore(app);
-      storage = getStorage(app);
-      analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
-    }
-  } catch (error) {
-    console.error("❌ Firebase initialization error:", error);
-    
-    // Use mock services when there's an error with Firebase initialization in development
-    if (process.env.NODE_ENV === 'development') {
-      console.warn("💡 Falling back to mock Firebase services due to initialization error.");
-      
-      // Enhance mockAuth with any missing required methods
-      const enhancedMockAuth = {
-        ...mockAuth,
-        // Add any additional methods that might be missing from the mock
-        _getRecaptchaConfig: () => null,
-      };
-      
-      auth = enhancedMockAuth as unknown as Auth;
-      db = mockFirestore as unknown as Firestore;
-      storage = mockStorage as unknown as FirebaseStorage;
-      console.log("✅ Mock Firebase services initialized as fallback");
-    } else {
-      // In production, log more detailed error message
-      if (error.code === 'auth/invalid-api-key') {
-        console.error("The Firebase API key is invalid. Please check your environment variables.");
-      }
-    }
+if (hasAllConfig) {
+  // Normal Firebase initialization with actual config
+  firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(firebaseApp);
+  db = getFirestore(firebaseApp);
+  googleProvider = new GoogleAuthProvider();
+  githubProvider = new GithubAuthProvider();
+
+  // Optionally connect to emulators in development
+  if (isDevelopment && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
+    connectAuthEmulator(auth, 'http://localhost:9099');
+    connectFirestoreEmulator(db, 'localhost', 8080);
   }
+
+  console.log('✅ Firebase services initialized with configuration');
+} else {
+  // Mock implementation for development without Firebase config
+  console.log('Running in development mode without Firebase authentication');
+  const missingVars = Object.entries(firebaseConfig)
+    .filter(([_, value]) => !value)
+    .map(([key]) => key.replace('NEXT_PUBLIC_', ''))
+    .join(', ');
+
+  console.warn('⚠️ Missing environment variables:', missingVars);
+  console.log('💡 Using development mode with mock Firebase services.');
+
+  // Create mock services
+  auth = createMockAuth();
+  db = createMockFirestore();
+  googleProvider = {}; // Mock provider, just an empty object
+  githubProvider = {}; // Mock provider, just an empty object
+
+  console.log('✅ Mock Firebase services initialized for development');
 }
 
-export { app, auth, db, storage, analytics };
+export { auth, db, googleProvider, githubProvider };

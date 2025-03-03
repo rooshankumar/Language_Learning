@@ -1,78 +1,87 @@
-// This file provides a mock authentication service for development
-// when Firebase credentials are not available
 
 import { User } from "firebase/auth";
 import { v4 as uuidv4 } from 'uuid';
 
 // Mock user for development
 const mockUser = {
-  uid: "mock-user-id",
-  email: "mockuser@example.com",
-  displayName: "Mock User",
+  uid: uuidv4(),
+  email: "user@example.com",
+  displayName: "Test User",
   photoURL: "/placeholder-user.jpg",
   emailVerified: true,
   isAnonymous: false,
-  metadata: {
-    creationTime: new Date().toISOString(),
-    lastSignInTime: new Date().toISOString(),
-  },
-  providerData: [],
-  getIdToken: () => Promise.resolve("mock-id-token"),
-  reload: () => Promise.resolve(),
 };
 
-// Mock authentication methods
-export const mockAuth = {
-  currentUser: mockUser,
-  onAuthStateChanged: (callback) => {
-    // Simulate an authenticated user
-    callback(mockUser);
-    return () => {}; // Return unsubscribe function
-  },
-  signInWithEmailAndPassword: (email, password) => {
-    return Promise.resolve({ user: mockUser });
-  },
-  createUserWithEmailAndPassword: (email, password) => {
-    return Promise.resolve({ user: { ...mockUser, email, uid: uuidv4() } });
-  },
-  signOut: () => Promise.resolve(),
-  signInWithPopup: () => Promise.resolve({ user: mockUser }),
-  sendPasswordResetEmail: () => Promise.resolve(),
-  updateProfile: () => Promise.resolve(),
-  // Add this to fix the _getRecaptchaConfig error
-  _getRecaptchaConfig: () => null,
+// Mock Firebase Auth provider
+export const createMockAuth = () => {
+  let currentUser: User | null = { ...mockUser } as unknown as User;
+  
+  const listeners: Array<(user: User | null) => void> = [];
+
+  const auth = {
+    currentUser,
+    onAuthStateChanged: (callback: (user: User | null) => void) => {
+      listeners.push(callback);
+      // Trigger the callback with the current user
+      setTimeout(() => callback(currentUser), 0);
+      
+      // Return an unsubscribe function
+      return () => {
+        const index = listeners.indexOf(callback);
+        if (index !== -1) {
+          listeners.splice(index, 1);
+        }
+      };
+    },
+    signInWithEmailAndPassword: async () => {
+      currentUser = { ...mockUser } as unknown as User;
+      listeners.forEach(callback => callback(currentUser));
+      return { user: currentUser };
+    },
+    signInWithPopup: async () => {
+      currentUser = { ...mockUser } as unknown as User;
+      listeners.forEach(callback => callback(currentUser));
+      return { user: currentUser };
+    },
+    createUserWithEmailAndPassword: async () => {
+      currentUser = { ...mockUser } as unknown as User;
+      listeners.forEach(callback => callback(currentUser));
+      return { user: currentUser };
+    },
+    signOut: async () => {
+      currentUser = null;
+      listeners.forEach(callback => callback(currentUser));
+    }
+  };
+
+  return auth;
 };
 
-// Mock Firestore methods
-export const mockFirestore = {
-  collection: () => ({
-    doc: () => ({
-      get: () => Promise.resolve({
-        exists: true,
-        data: () => ({ name: 'Mock User', email: 'mockuser@example.com' }),
+// Mock Firestore
+export const createMockFirestore = () => {
+  return {
+    collection: () => ({
+      doc: () => ({
+        set: async () => Promise.resolve(),
+        get: async () => ({
+          exists: true,
+          data: () => ({ name: "Test User", email: "user@example.com" })
+        }),
+        update: async () => Promise.resolve()
       }),
-      set: () => Promise.resolve(),
-      update: () => Promise.resolve(),
-    }),
-  }),
-  doc: () => ({
-    get: () => Promise.resolve({
-      exists: true,
-      data: () => ({ name: 'Mock User', email: 'mockuser@example.com' }),
-    }),
-    set: () => Promise.resolve(),
-    update: () => Promise.resolve(),
-  }),
-};
-
-// Mock Storage methods
-export const mockStorage = {
-  ref: () => ({
-    put: () => Promise.resolve({
-      ref: {
-        getDownloadURL: () => Promise.resolve("https://example.com/image.jpg"),
-      },
-    }),
-    getDownloadURL: () => Promise.resolve("https://example.com/image.jpg"),
-  }),
+      where: () => ({
+        get: async () => ({
+          empty: false,
+          docs: [
+            {
+              exists: true,
+              data: () => ({ name: "Test User", email: "user@example.com" }),
+              id: "user123"
+            }
+          ]
+        })
+      }),
+      add: async () => Promise.resolve({ id: "doc123" })
+    })
+  };
 };
