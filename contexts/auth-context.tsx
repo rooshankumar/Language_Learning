@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -52,28 +51,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Guard to ensure we only run in browser environment
     if (typeof window === 'undefined') return;
-    
+
     const initializeAuth = async () => {
       try {
         // Import Firebase auth only on client side
         const { auth: clientAuth, db: clientDb } = await import("@/lib/firebase");
-        
+
+        // Skip if we're in a server environment
+        if (typeof window === 'undefined') {
+          setLoading(false);
+          return;
+        }
+
         if (!clientAuth) {
           console.error("Firebase Auth could not be initialized");
           setError("Authentication service could not be initialized. Please refresh the page or try again later.");
           setLoading(false);
           return;
         }
-        
+
         // Set persistence to LOCAL to persist authentication between sessions
         try {
           const { browserLocalPersistence, setPersistence } = await import("firebase/auth");
-          
+
           // Ensure clientAuth is not empty (server-side stub)
           if (clientAuth && clientAuth.setPersistence) {
             await setPersistence(clientAuth, browserLocalPersistence);
             console.log("Auth persistence set to LOCAL");
-            
+
             // Check for stored trust device preference
             const trustDevice = localStorage.getItem("trust_device") === "true";
             if (trustDevice) {
@@ -85,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Error setting auth persistence:", persistenceError);
           // Continue anyway, this is not critical
         }
-        
+
         setAuth(clientAuth);
         setDb(clientDb);
       } catch (error) {
@@ -94,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     };
-    
+
     initializeAuth();
   }, []);
 
@@ -201,11 +206,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError("Service is not available. Please try again later.");
         throw new Error("Authentication or database not initialized.");
       }
-      
+
       // In development mode with mock auth, handle specially
       if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
         console.log("Using mock sign-up flow");
-        
+
         // Create a mock user
         const mockUid = `mock-uid-${Date.now()}`;
         const mockUser = {
@@ -216,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAnonymous: false,
           photoURL: "/placeholder-user.jpg"
         } as unknown as User;
-        
+
         try {
           // Set mock user data in Firestore
           await setDoc(doc(db, "users", mockUid), {
@@ -229,7 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Mock Firestore error:", e);
           // Continue anyway
         }
-        
+
         setUser(mockUser);
         router.push("/onboarding");
         return;
@@ -294,7 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError("Service is not available. Please try again later.");
         throw new Error("Authentication or database not initialized.");
       }
-      
+
       console.log("Initiating Google sign-in popup");
       const result = await signInWithPopup(auth, googleProvider);
       const googleUser = result.user;
@@ -303,7 +308,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Check if this is a new signup or returning user
         const isNewUser = googleUser.metadata.creationTime === googleUser.metadata.lastSignInTime;
-        
+
         // 🔹 Save Google user to Firestore if first-time login
         await setDoc(doc(db, "users", googleUser.uid), {
           uid: googleUser.uid,
@@ -314,7 +319,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isNewUser: isNewUser
         }, { merge: true });
         console.log("Google user data saved to Firestore");
-        
+
         // If this is a new user, we'll want to redirect to onboarding
         if (isNewUser) {
           // Ensure we redirect to onboarding with small delay to allow state updates
@@ -382,13 +387,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setError("reCAPTCHA verification expired. Please try again.");
           }
         });
-        
+
         setRecaptchaVerifier(verifier);
-        
+
         // Send verification code
         const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
         console.log("SMS sent to", phoneNumber);
-        
+
         // Return verificationId to be used in confirmPhoneCode
         return confirmationResult.verificationId;
       } else {
@@ -396,7 +401,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error("Phone sign in error:", error);
-      
+
       if (error.code === 'auth/invalid-phone-number') {
         setError("Invalid phone number. Please enter a valid phone number.");
       } else if (error.code === 'auth/too-many-requests') {
@@ -406,7 +411,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(error.message || "Failed to send verification code. Please try again.");
       }
-      
+
       throw error;
     } finally {
       setLoading(false);
@@ -428,15 +433,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Create credential with verification ID and code
       const { PhoneAuthProvider } = await import("firebase/auth");
       const credential = PhoneAuthProvider.credential(verificationId, code);
-      
+
       // Sign in with credential
       const { signInWithCredential } = await import("firebase/auth");
       const userCredential = await signInWithCredential(auth, credential);
       const phoneUser = userCredential.user;
-      
+
       // Check if this is a new signup or returning user
       const isNewUser = phoneUser.metadata.creationTime === phoneUser.metadata.lastSignInTime;
-      
+
       // Save phone user to Firestore
       await setDoc(doc(db, "users", phoneUser.uid), {
         uid: phoneUser.uid,
@@ -444,9 +449,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
         isNewUser: isNewUser
       }, { merge: true });
-      
+
       setUser(phoneUser);
-      
+
       // Redirect based on whether this is a new user
       if (isNewUser) {
         router.push("/onboarding");
@@ -455,7 +460,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error("Phone verification error:", error);
-      
+
       if (error.code === 'auth/invalid-verification-code') {
         setError("Invalid verification code. Please check and try again.");
       } else if (error.code === 'auth/code-expired') {
@@ -463,7 +468,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setError(error.message || "Failed to verify phone number. Please try again.");
       }
-      
+
       throw error;
     } finally {
       setLoading(false);
@@ -491,12 +496,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!isValidEmail(email)) {
         setError("Please enter a valid email address");
         throw new Error("Invalid email format");
       }
-      
+
       await sendPasswordResetEmail(auth, email);
     } catch (error: any) {
       console.error("Reset password error:", error);

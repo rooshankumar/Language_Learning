@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -90,7 +89,7 @@ export default function SignUp() {
     try {
       // Format phone number if needed
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`
-      
+
       const verifyId = await signInWithPhone(formattedPhone, 'recaptcha-container')
       setVerificationId(verifyId)
       setShowCodeInput(true)
@@ -147,7 +146,7 @@ export default function SignUp() {
         </video>
         <div className="absolute inset-0 bg-gradient-to-br from-pink-900/40 to-gray-900/70 backdrop-blur-sm"></div>
       </div>
-      
+
       <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 shadow-xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
@@ -159,13 +158,13 @@ export default function SignUp() {
               <AlertDescription>{localError || authError}</AlertDescription>
             </Alert>
           )}
-          
+
           <Tabs defaultValue="email" className="w-full" onValueChange={setAuthMethod}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="email">Email</TabsTrigger>
               <TabsTrigger value="phone">Phone</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="email">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -236,7 +235,7 @@ export default function SignUp() {
                 </Button>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="phone">
               {!showCodeInput ? (
                 <form onSubmit={handlePhoneSignUp} className="space-y-4">
@@ -310,7 +309,7 @@ export default function SignUp() {
               )}
             </TabsContent>
           </Tabs>
-          
+
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
@@ -319,7 +318,7 @@ export default function SignUp() {
               <span className="bg-background px-2">Or continue with</span>
             </div>
           </div>
-          
+
           <Button 
             variant="outline" 
             className="w-full" 

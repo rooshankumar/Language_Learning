@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getAuth, 
@@ -34,24 +33,24 @@ const hasMinConfig = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
 if (hasMinConfig) {
   // Initialize Firebase app
   firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  
+
   // Initialize Firestore (works on both client and server)
   db = getFirestore(firebaseApp);
-  
+
   // Initialize Auth only on client-side
   if (isBrowser) {
     auth = getAuth(firebaseApp);
-    
+
     // Connect to emulators in development if configured
     if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
       connectAuthEmulator(auth, 'http://localhost:9099');
       connectFirestoreEmulator(db, 'localhost', 8080);
     }
-    
+
     console.log('✅ Firebase services initialized with real config');
   } else {
-    // Server-side stub for auth
-    auth = {} as any;
+    // Server-side stub for auth - don't try to initialize actual Firebase Auth
+    auth = null as any;
     console.log('🔶 Firebase Auth skipped on server-side');
   }
 } else {
