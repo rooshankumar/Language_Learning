@@ -3,7 +3,8 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  const authCookie = request.cookies.get("auth")
+  // Get Firebase auth session cookie if it exists
+  const authCookie = request.cookies.get("__session") || request.cookies.get("auth")
   const { pathname } = request.nextUrl
 
   // Auth routes that don't require authentication
@@ -15,7 +16,7 @@ export function middleware(request: NextRequest) {
   // Check if we're in a redirect loop by counting redirects
   const redirectCount = parseInt(request.cookies.get("redirect-count")?.value || "0")
   
-  // If too many redirects or we're on a development page, just let the request through
+  // If too many redirects or we're in development mode, just let the request through
   if (redirectCount > 3 || process.env.NODE_ENV === 'development') {
     const response = NextResponse.next()
     response.cookies.delete("redirect-count")
