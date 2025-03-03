@@ -322,3 +322,133 @@ export function ChatWindow({ chatId, recipientId, onBack }: ChatWindowProps) {
     </div>
   )
 }
+"use client"
+
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAuth } from '@/contexts/auth-context'
+import { useChat } from '@/hooks/use-chat'
+import { ArrowLeft, Send } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+
+interface ChatWindowProps {
+  chatId: string
+  recipientId: string
+  onBack: () => void
+}
+
+export function ChatWindow({ chatId, recipientId, onBack }: ChatWindowProps) {
+  const { user } = useAuth()
+  const [message, setMessage] = useState('')
+  const [recipientName, setRecipientName] = useState('')
+  const [recipientAvatar, setRecipientAvatar] = useState('')
+  const { messages, sendMessage, loading } = useChat(chatId, recipientId)
+
+  useEffect(() => {
+    // Fetch recipient details
+    const fetchRecipientDetails = async () => {
+      try {
+        const { doc, getDoc } = await import("firebase/firestore")
+        const { db } = await import("@/lib/firebase")
+        
+        const userDoc = await getDoc(doc(db, "users", recipientId))
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+          setRecipientName(userData.displayName || 'User')
+          setRecipientAvatar(userData.photoURL || '')
+        }
+      } catch (error) {
+        console.error("Error fetching recipient details:", error)
+      }
+    }
+    
+    fetchRecipientDetails()
+  }, [recipientId])
+
+  const handleSend = () => {
+    if (message.trim() && user) {
+      sendMessage({
+        senderId: user.uid,
+        recipientId: recipientId,
+        content: message.trim(),
+        timestamp: new Date().toISOString(),
+        read: false,
+      })
+      setMessage('')
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b flex items-center">
+        <Button variant="ghost" size="icon" onClick={onBack} className="mr-2">
+          <ArrowLeft size={20} />
+        </Button>
+        <Avatar className="h-8 w-8 mr-2">
+          <AvatarImage src={recipientAvatar || '/placeholder-user.jpg'} alt={recipientName} />
+          <AvatarFallback>{recipientName.slice(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <span className="font-medium">{recipientName}</span>
+      </div>
+      
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-4">Loading messages...</div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              No messages yet. Start a conversation!
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    msg.senderId === user?.uid
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <div>{msg.content}</div>
+                  <div className={`text-xs mt-1 ${
+                    msg.senderId === user?.uid ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                  }`}>
+                    {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+      
+      <div className="p-4 border-t">
+        <div className="flex gap-2">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            className="flex-1"
+          />
+          <Button onClick={handleSend} disabled={!message.trim()}>
+            <Send size={18} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}

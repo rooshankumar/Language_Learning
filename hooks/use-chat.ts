@@ -17,6 +17,93 @@ export interface Message {
 
 // Define chat hook return type
 interface UseChatReturn {
+  messages: Message[];
+  sendMessage: (message: Message) => void;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useChat(chatId: string, recipientId: string): UseChatReturn {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const socketRef = useRef<Socket | null>(null);
+
+  // Send a message
+  const sendMessage = useCallback(async (message: Message) => {
+    try {
+      if (!user) return;
+      
+      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      
+      // Save message to Firestore
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        ...message,
+        timestamp: serverTimestamp(),
+      });
+      
+      // Optionally emit via socket if real-time
+      if (socketRef.current) {
+        socketRef.current.emit('send_message', message);
+      }
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setError("Failed to send message");
+    }
+  }, [user, chatId]);
+
+  // Load messages
+  useEffect(() => {
+    if (!user || !chatId) return;
+    
+    const loadMessages = async () => {
+      try {
+        setLoading(true);
+        
+        const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+        
+        const q = query(
+          collection(db, "chats", chatId, "messages"),
+          orderBy("timestamp", "asc")
+        );
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const messageList: Message[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            messageList.push({
+              id: doc.id,
+              senderId: data.senderId,
+              recipientId: data.recipientId,
+              content: data.content,
+              timestamp: data.timestamp?.toDate?.() 
+                ? data.timestamp.toDate().toISOString() 
+                : new Date().toISOString(),
+              read: data.read || false,
+            });
+          });
+          
+          setMessages(messageList);
+          setLoading(false);
+        });
+        
+        return unsubscribe;
+      } catch (err) {
+        console.error("Error loading messages:", err);
+        setError("Failed to load messages");
+        setLoading(false);
+      }
+    };
+    
+    loadMessages();
+  }, [user, chatId]);
+
+  return { messages, sendMessage, loading, error };
+}
+interface UseChatReturn {
   socket: Socket | null;
   connected: boolean;
   messages: Message[];
