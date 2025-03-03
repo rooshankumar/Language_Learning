@@ -35,6 +35,18 @@ if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_FIREBA
   connectFirestoreEmulator(db, 'localhost', 8080);
 }
 
+// Initialize the authentication providers
+const googleProvider = new GoogleAuthProvider();
+// Add scopes for additional permissions
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+// Set custom parameters for login prompt
+googleProvider.setCustomParameters({
+  prompt: 'select_account' // Forces account selection even if already logged in
+});
+
+const githubProvider = new GithubAuthProvider();
+
 console.log('✅ Firebase services initialized');
 
 // If some config is missing, log warnings but continue with real Firebase

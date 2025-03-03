@@ -231,19 +231,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Authentication or database not initialized.");
       }
       
-      // Real implementation for production
-      const provider = new GoogleAuthProvider();
-      // Add scopes for additional permissions if needed
-      provider.addScope('https://www.googleapis.com/auth/userinfo.email');
-      provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
-      
-      // Set custom parameters for login prompt
-      provider.setCustomParameters({
-        prompt: 'select_account' // Forces account selection even if already logged in
-      });
+      // Import Firebase auth and providers only on client side
+      const { googleProvider } = await import("@/lib/firebase");
       
       console.log("Initiating Google sign-in popup");
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, googleProvider);
       const googleUser = result.user;
       console.log("Google sign-in successful:", googleUser.uid);
 
