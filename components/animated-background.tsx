@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -30,7 +29,6 @@ export function AnimatedBackground({
     </div>
   );
 }
-"use client"
 
 import React from 'react'
 

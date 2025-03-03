@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import useIsomorphicLayoutEffect from "@/hooks/use-isomorphic-layout-effect"
 
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
@@ -41,8 +42,10 @@ export const SidebarProvider = React.forwardRef<
   const [isMobile, setIsMobile] = React.useState(false)
   const [openMobile, setOpenMobile] = React.useState(false)
 
-  // Check if we're on mobile
+  // Check if we're on mobile - using useEffect since we're checking window
   React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
