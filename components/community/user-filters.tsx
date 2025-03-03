@@ -117,7 +117,7 @@ export function UserFilters({ onFilterChange }: UserFiltersProps) {
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any language</SelectItem>
+              <SelectItem value="">Any language</SelectItem> {/* Added value="" */}
               {LANGUAGES.map(language => (
                 <SelectItem key={language} value={language}>{language}</SelectItem>
               ))}

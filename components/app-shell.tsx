@@ -15,8 +15,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && !user) {
       router.push("/sign-in")
-    } else if (user && !localStorage.getItem("trust_device_dialog_shown")) {
-      setShowDialog(true);
+    } else if (user) {
+      // Show dialog only if trust preference hasn't been set
+      const trustDialogShown = localStorage.getItem("trust_device_dialog_shown");
+      if (!trustDialogShown) {
+        setShowDialog(true);
+      }
     }
   }, [user, loading, router])
 

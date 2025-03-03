@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -24,7 +23,7 @@ export function TrustDeviceDialog({ onConfirm }: { onConfirm: (trustDevice: bool
   useEffect(() => {
     // Check if we've already shown this dialog
     const hasShownDialog = localStorage.getItem("trust_device_dialog_shown")
-    
+
     if (!hasShownDialog) {
       setOpen(true)
     }
@@ -38,17 +37,20 @@ export function TrustDeviceDialog({ onConfirm }: { onConfirm: (trustDevice: bool
         title: "Device trusted",
         description: "You will stay signed in on this device.",
       })
+    } else {
+      localStorage.setItem("trust_device", "false");
     }
-    
+
     // Mark that we've shown the dialog
     localStorage.setItem("trust_device_dialog_shown", "true")
-    
+
     onConfirm(trustDevice)
     setOpen(false)
   }
 
   const handleCancel = () => {
     localStorage.setItem("trust_device_dialog_shown", "true")
+    localStorage.setItem("trust_device", "false"); //Added to ensure false is stored on cancel
     onConfirm(false)
     setOpen(false)
   }

@@ -43,22 +43,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize Firebase only on client side
   useEffect(() => {
-    // Import Firebase auth only on client side
-    import("@/lib/firebase").then(({ auth: clientAuth, db: clientDb }) => {
-      // Set persistence to LOCAL to persist authentication between sessions
-      import("firebase/auth").then(({ browserLocalPersistence, setPersistence }) => {
-        setPersistence(clientAuth, browserLocalPersistence)
-          .then(() => {
-            console.log("Auth persistence set to LOCAL");
-          })
-          .catch((error) => {
-            console.error("Error setting auth persistence:", error);
-          });
-      });
-      
-      setAuth(clientAuth);
-      setDb(clientDb);
-    });
+    const initializeAuth = async () => {
+      try {
+        // Import Firebase auth only on client side
+        const { auth: clientAuth, db: clientDb } = await import("@/lib/firebase");
+        // Set persistence to LOCAL to persist authentication between sessions
+        const { browserLocalPersistence, setPersistence } = await import("firebase/auth");
+        
+        await setPersistence(clientAuth, browserLocalPersistence);
+        console.log("Auth persistence set to LOCAL");
+        
+        // Check for stored trust device preference
+        const trustDevice = localStorage.getItem("trust_device") === "true";
+        if (trustDevice) {
+          console.log("Using trusted device persistence");
+          // We could add additional persistence options here
+        }
+        
+        setAuth(clientAuth);
+        setDb(clientDb);
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+    
+    initializeAuth();
   }, []);
 
   useEffect(() => {
