@@ -116,4 +116,3 @@ export const createMockFirestore = () => {
   
   return mockDb;
 };
-};
