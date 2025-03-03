@@ -88,10 +88,7 @@ export default function SignUp() {
     }
 
     try {
-      // Format phone number if needed
-      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`
-      
-      const verificationId = await signInWithPhone(formattedPhone)
+      const verificationId = await signInWithPhone(phoneNumber)
       setVerificationId(verificationId)
       setShowCodeInput(true)
       toast({
@@ -147,7 +144,7 @@ export default function SignUp() {
         </video>
         <div className="absolute inset-0 bg-gradient-to-br from-pink-900/40 to-gray-900/70 backdrop-blur-sm"></div>
       </div>
-
+      
       <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-white/90 dark:bg-gray-900/90 shadow-xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
@@ -185,7 +182,7 @@ export default function SignUp() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="name@example.com"
+                    placeholder="Your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -207,9 +204,9 @@ export default function SignUp() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
                   <Input
-                    id="confirmPassword"
+                    id="confirm-password"
                     type="password"
                     placeholder="Confirm your password"
                     value={confirmPassword}
@@ -219,18 +216,13 @@ export default function SignUp() {
                     className="bg-white/50 dark:bg-gray-800/50"
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-pink-600 hover:bg-pink-700 text-white" 
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Please wait
                     </>
                   ) : (
-                    "Create account"
+                    "Sign Up with Email"
                   )}
                 </Button>
               </form>
@@ -244,7 +236,7 @@ export default function SignUp() {
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+1234567890"
+                      placeholder="+1 (555) 123-4567"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       required
@@ -252,19 +244,13 @@ export default function SignUp() {
                       className="bg-white/50 dark:bg-gray-800/50"
                     />
                   </div>
-                  <div id="recaptcha-container" className="my-4 flex justify-center"></div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-pink-600 hover:bg-pink-700 text-white" 
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Sending code...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending code
                       </>
                     ) : (
-                      "Send verification code"
+                      "Send Verification Code"
                     )}
                   </Button>
                 </form>
@@ -274,7 +260,7 @@ export default function SignUp() {
                     <Label htmlFor="code">Verification Code</Label>
                     <Input
                       id="code"
-                      placeholder="Enter verification code"
+                      placeholder="Enter 6-digit code"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       required
@@ -282,19 +268,23 @@ export default function SignUp() {
                       className="bg-white/50 dark:bg-gray-800/50"
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-pink-600 hover:bg-pink-700 text-white" 
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verifying...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying
                       </>
                     ) : (
-                      "Verify code"
+                      "Verify Code"
                     )}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="w-full mt-2"
+                    onClick={() => setShowCodeInput(false)}
+                    disabled={isLoading}
+                  >
+                    Change Phone Number
                   </Button>
                 </form>
               )}
@@ -303,23 +293,35 @@ export default function SignUp() {
           
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t"></div>
+              <div className="w-full border-t border-gray-300 dark:border-gray-700" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">Or continue with</span>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">
+                Or continue with
+              </span>
             </div>
           </div>
           
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleGoogleSignUp} 
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogleSignUp}
             disabled={isLoading}
           >
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+              <svg
+                className="mr-2 h-4 w-4"
+                aria-hidden="true"
+                focusable="false"
+                data-prefix="fab"
+                data-icon="google"
+                role="img"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+              >
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
