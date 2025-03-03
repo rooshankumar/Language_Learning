@@ -1,3 +1,4 @@
+
 "use client"
 
 import dynamic from 'next/dynamic'
@@ -12,7 +13,7 @@ const ChatDetailPage = dynamic(() => import('@/components/chat/chat-detail-page'
 export default function Page({ params }: { params: { chatId: string } }) {
   return (
     <Suspense fallback={<div className="p-4">Loading chat conversation...</div>}>
-      <ChatDetailPage params={params} />
+      <ChatDetailPage chatId={params.chatId} />
     </Suspense>
   )
 }
