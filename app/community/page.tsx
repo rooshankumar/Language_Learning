@@ -39,7 +39,7 @@ export default function CommunityPage() {
       try {
         const usersCollection = collection(db, "users");
         let q;
-        
+
         if (user && user.uid) {
           // If user is authenticated, exclude the current user
           q = query(usersCollection, where("uid", "!=", user.uid));
@@ -53,7 +53,7 @@ export default function CommunityPage() {
 
         querySnapshot.forEach((doc) => {
           const data = doc.data() as any;
-          
+
           // Format the data to match UserData type, with default values for missing fields
           const userData: UserData = {
             uid: data.uid || doc.id,
@@ -64,7 +64,7 @@ export default function CommunityPage() {
             interests: data.interests || [],
             bio: data.bio || "No bio available"
           };
-          
+
           usersData.push(userData);
         });
 
@@ -93,7 +93,7 @@ export default function CommunityPage() {
 
     if (filters.language) {
       filtered = filtered.filter(
-        user => user.nativeLanguage === filters.language || user.learningLanguage === filters.language
+        user => (filters.language === "all" || user.nativeLanguage === filters.language || user.learningLanguage === filters.language)
       )
     }
 

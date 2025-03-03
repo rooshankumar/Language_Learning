@@ -46,7 +46,7 @@ const LANGUAGES = [
 
 export function UserFilters({ onFilterChange }: UserFiltersProps) {
   const [filters, setFilters] = useState<FiltersState>({
-    language: "",
+    language: "all", // Initialize with "all" to avoid initial error
     interests: [],
   })
 
@@ -83,7 +83,7 @@ export function UserFilters({ onFilterChange }: UserFiltersProps) {
   // Clear all filters
   const clearFilters = () => {
     setFilters({
-      language: "",
+      language: "all", // Reset to "all"
       interests: []
     })
   }
@@ -93,7 +93,7 @@ export function UserFilters({ onFilterChange }: UserFiltersProps) {
       <CardHeader>
         <CardTitle className="text-xl flex justify-between items-center">
           <span>Filters</span>
-          {(filters.language || filters.interests.length > 0) && (
+          {(filters.language !== "all" || filters.interests.length > 0) && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -117,7 +117,7 @@ export function UserFilters({ onFilterChange }: UserFiltersProps) {
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any language</SelectItem> {/* Added value="" */}
+              <SelectItem value="all">All Languages</SelectItem>
               {LANGUAGES.map(language => (
                 <SelectItem key={language} value={language}>{language}</SelectItem>
               ))}
