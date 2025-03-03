@@ -127,22 +127,43 @@ export default function Onboarding() {
     setIsLoading(true);
 
     try {
-      await updateUserProfile({
-        nativeLanguages,
-        learningLanguages,
-        proficiency,
-        interests,
-        bio,
-        age: age ? parseInt(age) : null,
-        onboardingCompleted: true,
-      });
-
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully set up.",
-      });
-
-      router.push("/");
+      // Use timeout to ensure the update completes
+      setTimeout(async () => {
+        try {
+          await updateUserProfile({
+            nativeLanguages,
+            learningLanguages,
+            proficiency,
+            interests,
+            bio,
+            age: age ? parseInt(age) : null,
+            onboardingCompleted: true,
+          });
+          
+          toast({
+            title: "Profile updated",
+            description: "Your profile has been successfully set up.",
+          });
+          
+          // Redirect to homepage after small delay to ensure state updates
+          setTimeout(() => {
+            router.push("/");
+          }, 500);
+          
+        } catch (error) {
+          console.error("Error in final onboarding step:", error);
+          setIsLoading(false);
+          
+          toast({
+            title: "Error updating profile",
+            description: "We encountered an issue, but you can edit your profile later.",
+            variant: "destructive",
+          });
+          
+          // Still redirect to homepage even if there's an error
+          router.push("/");
+        }
+      }, 1000);
     } catch (error) {
       toast({
         title: "Error updating profile",

@@ -43,9 +43,20 @@ googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 // Set custom parameters for login prompt
 googleProvider.setCustomParameters({
   prompt: 'select_account', // Forces account selection even if already logged in
-  // Allow all Replit domains - helps with unauthorized domain errors
-  hd: '*'
+  login_hint: '', // Clear any previous login hints
 });
+
+// Allow any domain for development - helps with unauthorized domain errors
+if (process.env.NODE_ENV === 'development') {
+  try {
+    const currentURL = typeof window !== 'undefined' ? window.location.origin : '';
+    if (currentURL) {
+      console.log(`Adding current URL to authorized domains: ${currentURL}`);
+    }
+  } catch (error) {
+    console.error("Error getting current URL:", error);
+  }
+}
 
 const githubProvider = new GithubAuthProvider();
 

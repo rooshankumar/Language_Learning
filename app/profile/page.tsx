@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { AppShell } from "@/components/app-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { LanguageProgress } from "@/components/profile/language-progress";
+import {X} from "lucide-react";
+
 
 const languages = [
   "English", "Spanish", "French", "German", "Italian", "Portuguese", "Russian",
@@ -43,7 +44,7 @@ export default function ProfilePage() {
   const [interests, setInterests] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userData, setUserData] = useState<any>(null);
-  
+
   useEffect(() => {
     // If user is not authenticated, redirect to sign-in
     if (!user) {
@@ -54,7 +55,7 @@ export default function ProfilePage() {
     // Initialize form with user data
     setName(user.displayName || "");
     setPhotoURL(user.photoURL || "/placeholder-user.jpg");
-    
+
     // Fetch additional user data from Firestore (simplified for brevity)
     const fetchUserData = async () => {
       try {
@@ -158,7 +159,7 @@ export default function ProfilePage() {
   // Update general profile information
   const handleGeneralUpdate = async () => {
     if (!user) return;
-    
+
     setIsLoading(true);
     try {
       await updateUserProfile({
@@ -166,7 +167,7 @@ export default function ProfilePage() {
         bio,
         age: age ? parseInt(age) : null,
       });
-      
+
       toast({
         title: "Profile updated",
         description: "Your general information has been updated successfully.",
@@ -186,14 +187,14 @@ export default function ProfilePage() {
   // Update language preferences
   const handleLanguageUpdate = async () => {
     if (!user) return;
-    
+
     setIsLoading(true);
     try {
       await updateUserProfile({
         nativeLanguages,
         learningLanguages,
       });
-      
+
       toast({
         title: "Languages updated",
         description: "Your language preferences have been updated successfully.",
@@ -213,13 +214,13 @@ export default function ProfilePage() {
   // Update interests
   const handleInterestsUpdate = async () => {
     if (!user) return;
-    
+
     setIsLoading(true);
     try {
       await updateUserProfile({
         interests,
       });
-      
+
       toast({
         title: "Interests updated",
         description: "Your interests have been updated successfully.",
@@ -288,7 +289,7 @@ export default function ProfilePage() {
               <TabsTrigger value="interests">Interests</TabsTrigger>
               <TabsTrigger value="account">Account</TabsTrigger>
             </TabsList>
-            
+
             {/* General Tab */}
             <TabsContent value="general">
               <Card>
@@ -331,7 +332,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Display Name */}
                   <div>
                     <Label htmlFor="display-name">Display Name</Label>
@@ -343,7 +344,7 @@ export default function ProfilePage() {
                       className="mt-1"
                     />
                   </div>
-                  
+
                   {/* Age */}
                   <div>
                     <Label htmlFor="age">Age</Label>
@@ -358,7 +359,7 @@ export default function ProfilePage() {
                       max="120"
                     />
                   </div>
-                  
+
                   {/* Bio */}
                   <div>
                     <Label htmlFor="bio">Bio</Label>
@@ -386,85 +387,105 @@ export default function ProfilePage() {
                 </CardFooter>
               </Card>
             </TabsContent>
-            
-            {/* Language Tab */}
+
+            {/* Languages Tab */}
             <TabsContent value="language">
               <Card>
                 <CardHeader>
-                  <CardTitle>Language Settings</CardTitle>
+                  <CardTitle>Language Preferences</CardTitle>
                   <CardDescription>
-                    Update your language preferences.
+                    Manage your native and learning languages.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Native Languages */}
-                  <div className="space-y-2">
-                    <Label>Native Languages (up to 3)</Label>
-                    <Select onValueChange={handleAddNativeLanguage}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a native language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {languages
-                          .filter(language => !nativeLanguages.includes(language))
-                          .map((language) => (
-                            <SelectItem key={language} value={language}>
-                              {language}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {nativeLanguages.map((language) => (
-                        <Badge key={language} variant="secondary" className="px-3 py-1">
-                          {language}
+                  <div>
+                    <Label className="mb-2 inline-block">Native Languages (Max 3)</Label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {nativeLanguages.map((lang) => (
+                        <Badge key={lang} className="px-3 py-1">
+                          {lang}
                           <button
-                            onClick={() => handleRemoveNativeLanguage(language)}
-                            className="ml-2 text-xs"
+                            type="button"
+                            className="ml-2"
+                            onClick={() => setNativeLanguages(nativeLanguages.filter(l => l !== lang))}
                           >
-                            ✕
+                            <X className="h-3 w-3" />
                           </button>
                         </Badge>
                       ))}
                     </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {languages
+                        .filter(lang => !nativeLanguages.includes(lang))
+                        .slice(0, 8) 
+                        .map(language => (
+                          <Button 
+                            key={language} 
+                            variant="outline" 
+                            className="justify-start"
+                            type="button"
+                            disabled={nativeLanguages.length >= 3}
+                            onClick={() => {
+                              if (!nativeLanguages.includes(language) && nativeLanguages.length < 3) {
+                                setNativeLanguages([...nativeLanguages, language]);
+                              }
+                            }}
+                          >
+                            {language}
+                          </Button>
+                        ))}
+                    </div>
+                    {nativeLanguages.length >= 3 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Maximum of 3 native languages reached.
+                      </p>
+                    )}
                   </div>
-                  
+
                   {/* Learning Languages */}
-                  <div className="space-y-2">
-                    <Label>Languages You're Learning (up to 5)</Label>
-                    <Select onValueChange={handleAddLearningLanguage}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a language to learn" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {languages
-                          .filter(language => !learningLanguages.includes(language) && !nativeLanguages.includes(language))
-                          .map((language) => (
-                            <SelectItem key={language} value={language}>
-                              {language}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {learningLanguages.map((language) => (
-                        <Badge key={language} variant="default" className="px-3 py-1">
-                          {language}
+                  <div>
+                    <Label className="mb-2 inline-block">Learning Languages (Max 5)</Label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {learningLanguages.map((lang) => (
+                        <Badge key={lang} className="px-3 py-1">
+                          {lang}
                           <button
-                            onClick={() => handleRemoveLearningLanguage(language)}
-                            className="ml-2 text-xs"
+                            type="button"
+                            className="ml-2"
+                            onClick={() => setLearningLanguages(learningLanguages.filter(l => l !== lang))}
                           >
-                            ✕
+                            <X className="h-3 w-3" />
                           </button>
                         </Badge>
                       ))}
                     </div>
-                  </div>
-                  
-                  {/* Language progress component */}
-                  <div className="mt-8">
-                    <h3 className="font-medium mb-4">Your Progress</h3>
-                    <LanguageProgress />
+                    <div className="grid grid-cols-1 gap-2">
+                      {languages
+                        .filter(lang => !learningLanguages.includes(lang) && !nativeLanguages.includes(lang))
+                        .slice(0, 8) 
+                        .map(language => (
+                          <Button 
+                            key={language} 
+                            variant="outline" 
+                            className="justify-start"
+                            type="button"
+                            disabled={learningLanguages.length >= 5}
+                            onClick={() => {
+                              if (!learningLanguages.includes(language) && !nativeLanguages.includes(language) && learningLanguages.length < 5) {
+                                setLearningLanguages([...learningLanguages, language]);
+                              }
+                            }}
+                          >
+                            {language}
+                          </Button>
+                        ))}
+                    </div>
+                    {learningLanguages.length >= 5 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Maximum of 5 learning languages reached.
+                      </p>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -478,7 +499,7 @@ export default function ProfilePage() {
                 </CardFooter>
               </Card>
             </TabsContent>
-            
+
             {/* Interests Tab */}
             <TabsContent value="interests">
               <Card>
@@ -513,7 +534,7 @@ export default function ProfilePage() {
                 </CardFooter>
               </Card>
             </TabsContent>
-            
+
             {/* Account Tab */}
             <TabsContent value="account">
               <Card>
@@ -528,7 +549,7 @@ export default function ProfilePage() {
                     <h3 className="font-medium mb-2">Email</h3>
                     <p className="text-sm text-muted-foreground">{user.email}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="font-medium mb-4">Account Actions</h3>
                     <div className="space-y-4">
@@ -539,7 +560,7 @@ export default function ProfilePage() {
                       >
                         Sign Out
                       </Button>
-                      
+
                       <div>
                         <h4 className="text-sm font-medium mb-2 text-destructive">Danger Zone</h4>
                         <Button 

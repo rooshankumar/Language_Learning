@@ -248,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           uid: googleUser.uid,
           name: googleUser.displayName,
           email: googleUser.email,
+          photoURL: googleUser.photoURL,
           createdAt: new Date().toISOString(),
           isNewUser: isNewUser
         }, { merge: true });
@@ -255,13 +256,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // If this is a new user, we'll want to redirect to onboarding
         if (isNewUser) {
-          router.push("/onboarding");
+          // Ensure we redirect to onboarding with small delay to allow state updates
+          setTimeout(() => {
+            router.push("/onboarding");
+          }, 500);
         } else {
-          router.push("/");
+          setTimeout(() => {
+            router.push("/");
+          }, 500);
         }
       } catch (firestoreError) {
         console.error("Failed to save Google user data to Firestore:", firestoreError);
         // Continue anyway since auth is successful
+        setTimeout(() => {
+          router.push("/");
+        }, 500);
       }
 
       setUser(googleUser);
