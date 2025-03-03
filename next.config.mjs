@@ -1,4 +1,3 @@
-
 let userConfig = undefined
 try {
   userConfig = await import('./v0-user-next.config.js').catch(() => null)
@@ -8,6 +7,18 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  // Disable server-side rendering for pages with Firebase Auth
+  experimental: {
+    serverComponentsExternalPackages: ['firebase'],
+  },
+  // Avoid build issues with client-only components
+  compiler: {
+    styledComponents: true,
+  },
+  // If needed, add output config
+  output: 'standalone',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -31,7 +42,7 @@ function mergeConfig(nextConfig, userConfig) {
   }
 
   const merged = { ...nextConfig }
-  
+
   for (const key in userConfig) {
     if (
       typeof nextConfig[key] === 'object' &&
@@ -45,7 +56,7 @@ function mergeConfig(nextConfig, userConfig) {
       merged[key] = userConfig[key]
     }
   }
-  
+
   return merged
 }
 

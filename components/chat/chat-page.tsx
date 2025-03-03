@@ -15,7 +15,13 @@ export default function ChatPage() {
   }, []);
 
   if (isLoading) {
-    return <div>Loading chat data...</div>;
+    return (
+      <AppShell>
+        <div className="flex items-center justify-center h-full">
+          <div>Loading chat data...</div>
+        </div>
+      </AppShell>
+    );
   }
 
   return (

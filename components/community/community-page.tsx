@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { AppShell } from '@/components/app-shell';
 
 export default function CommunityPage() {
   const { user } = useAuth();
@@ -14,22 +15,30 @@ export default function CommunityPage() {
   }, []);
 
   if (isLoading) {
-    return <div>Loading community data...</div>;
+    return (
+      <AppShell>
+        <div className="flex items-center justify-center h-full">
+          <div>Loading community data...</div>
+        </div>
+      </AppShell>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Community</h1>
-      {user ? (
-        <div>
-          <p>Welcome to the community, {user.displayName || 'User'}!</p>
-          {/* Your community content here */}
-        </div>
-      ) : (
-        <div>
-          <p>Please sign in to access the community features.</p>
-        </div>
-      )}
-    </div>
+    <AppShell>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">Community</h1>
+        {user ? (
+          <div>
+            <p>Welcome to the community, {user.displayName || 'User'}!</p>
+            {/* Your community content here */}
+          </div>
+        ) : (
+          <div>
+            <p>Please sign in to access the community features.</p>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
