@@ -8,7 +8,12 @@ const mockUser = {
   displayName: "Development User",
   emailVerified: true,
   isAnonymous: false,
-  photoURL: "/placeholder-user.jpg"
+  photoURL: "/placeholder-user.jpg",
+  phoneNumber: "+1234567890",
+  metadata: {
+    creationTime: new Date().toISOString(),
+    lastSignInTime: new Date().toISOString()
+  }
 };
 
 // Mock Auth
@@ -43,6 +48,20 @@ export const createMockAuth = () => {
     },
     signInWithPopup: async () => {
       return { user: mockUser };
+    },
+    signInWithPhoneNumber: async () => {
+      return {
+        confirm: async () => ({ user: mockUser })
+      };
+    },
+    verifyPhoneNumber: async () => {
+      return { verificationId: "mock-verification-id" };
+    },
+    updateProfile: async () => {
+      return Promise.resolve();
+    },
+    sendPasswordResetEmail: async () => {
+      return Promise.resolve();
     }
   };
   
@@ -59,7 +78,16 @@ export const createMockFirestore = () => {
         set: async (data, options) => Promise.resolve(),
         get: async () => ({
           exists: true,
-          data: () => ({ name: "Test User", email: "user@example.com" })
+          data: () => ({ 
+            name: "Test User", 
+            email: "user@example.com",
+            phoneNumber: "+1234567890",
+            bio: "This is a test user bio",
+            age: 25,
+            nativeLanguage: "English",
+            learningLanguage: "Spanish",
+            interests: ["Reading", "Travel", "Music"]
+          })
         }),
         update: async (data) => Promise.resolve(),
         delete: async () => Promise.resolve(),
@@ -70,7 +98,7 @@ export const createMockFirestore = () => {
     collection: (path) => {
       return {
         id: path.split('/').pop(),
-        doc: (docId) => mockDb.doc(`${path}/${docId}`),
+        doc: (docId = uuidv4()) => mockDb.doc(`${path}/${docId}`),
         add: async (data) => {
           const docId = `mock-doc-${Date.now()}`;
           return { id: docId, ...mockDb.doc(`${path}/${docId}`) };
@@ -82,7 +110,16 @@ export const createMockFirestore = () => {
               {
                 id: "user123",
                 exists: true,
-                data: () => ({ name: "Test User", email: "user@example.com" }),
+                data: () => ({ 
+                  name: "Test User", 
+                  email: "user@example.com",
+                  phoneNumber: "+1234567890",
+                  bio: "This is a test user bio",
+                  age: 25,
+                  nativeLanguage: "English",
+                  learningLanguage: "Spanish",
+                  interests: ["Reading", "Travel", "Music"]
+                }),
                 ref: mockDb.doc(`${path}/user123`)
               }
             ]
@@ -94,7 +131,16 @@ export const createMockFirestore = () => {
                 {
                   id: "user123",
                   exists: true,
-                  data: () => ({ name: "Test User", email: "user@example.com" }),
+                  data: () => ({ 
+                    name: "Test User", 
+                    email: "user@example.com",
+                    photoURL: "/placeholder-user.jpg",
+                    bio: "This is a test user bio",
+                    age: 25,
+                    nativeLanguage: "English",
+                    learningLanguage: "Spanish",
+                    interests: ["Reading", "Travel", "Music"]
+                  }),
                   ref: mockDb.doc(`${path}/user123`)
                 }
               ]
@@ -106,7 +152,16 @@ export const createMockFirestore = () => {
                   {
                     id: "user123",
                     exists: true,
-                    data: () => ({ name: "Test User", email: "user@example.com" }),
+                    data: () => ({ 
+                      name: "Test User", 
+                      email: "user@example.com",
+                      photoURL: "/placeholder-user.jpg",
+                      bio: "This is a test user bio",
+                      age: 25, 
+                      nativeLanguage: "English",
+                      learningLanguage: "Spanish",
+                      interests: ["Reading", "Travel", "Music"]
+                    }),
                     ref: mockDb.doc(`${path}/user123`)
                   }
                 ]
@@ -121,7 +176,16 @@ export const createMockFirestore = () => {
                 {
                   id: "user123",
                   exists: true,
-                  data: () => ({ name: "Test User", email: "user@example.com" }),
+                  data: () => ({ 
+                    name: "Test User", 
+                    email: "user@example.com", 
+                    photoURL: "/placeholder-user.jpg",
+                    bio: "This is a test user bio",
+                    age: 25,
+                    nativeLanguage: "English",
+                    learningLanguage: "Spanish",
+                    interests: ["Reading", "Travel", "Music"]
+                  }),
                   ref: mockDb.doc(`${path}/user123`)
                 }
               ]
@@ -136,7 +200,16 @@ export const createMockFirestore = () => {
               {
                 id: "user123",
                 exists: true,
-                data: () => ({ name: "Test User", email: "user@example.com" }),
+                data: () => ({ 
+                  name: "Test User", 
+                  email: "user@example.com",
+                  photoURL: "/placeholder-user.jpg",
+                  bio: "This is a test user bio",
+                  age: 25,
+                  nativeLanguage: "English",
+                  learningLanguage: "Spanish",
+                  interests: ["Reading", "Travel", "Music"]
+                }),
                 ref: mockDb.doc(`${path}/user123`)
               }
             ]
@@ -148,7 +221,16 @@ export const createMockFirestore = () => {
                 {
                   id: "user123",
                   exists: true,
-                  data: () => ({ name: "Test User", email: "user@example.com" }),
+                  data: () => ({ 
+                    name: "Test User", 
+                    email: "user@example.com",
+                    photoURL: "/placeholder-user.jpg",
+                    bio: "This is a test user bio",
+                    age: 25,
+                    nativeLanguage: "English",
+                    learningLanguage: "Spanish",
+                    interests: ["Reading", "Travel", "Music"]
+                  }),
                   ref: mockDb.doc(`${path}/user123`)
                 }
               ]
@@ -163,7 +245,16 @@ export const createMockFirestore = () => {
               {
                 id: "user123",
                 exists: true,
-                data: () => ({ name: "Test User", email: "user@example.com" }),
+                data: () => ({ 
+                  name: "Test User", 
+                  email: "user@example.com",
+                  photoURL: "/placeholder-user.jpg",
+                  bio: "This is a test user bio",
+                  age: 25,
+                  nativeLanguage: "English",
+                  learningLanguage: "Spanish",
+                  interests: ["Reading", "Travel", "Music"]
+                }),
                 ref: mockDb.doc(`${path}/user123`)
               }
             ]

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -11,10 +12,13 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   updateProfile,
-  Auth
+  Auth,
+  PhoneAuthProvider,
+  signInWithPhoneNumber,
+  RecaptchaVerifier
 } from "firebase/auth";
 import { setDoc, doc, getFirestore, Firestore } from "firebase/firestore";
-import { auth as firebaseAuth, db as firebaseDb } from "@/lib/firebase";
+import { auth as firebaseAuth, db as firebaseDb, googleProvider, phoneProvider } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
@@ -26,6 +30,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithPhone: (phoneNumber: string, recaptchaContainer: string) => Promise<string>;
+  confirmPhoneCode: (verificationId: string, code: string) => Promise<void>;
   updateUserProfile: (profileData: any) => Promise<void>;
 }
 
@@ -40,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check if Firebase auth is available - must be in useEffect due to SSR
   const [auth, setAuth] = useState<Auth | undefined>(undefined);
   const [db, setDb] = useState<Firestore | undefined>(undefined);
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
 
   // Initialize Firebase only on client side
   useEffect(() => {
@@ -251,9 +258,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Authentication or database not initialized.");
       }
       
-      // Import Firebase auth and providers only on client side
-      const { googleProvider } = await import("@/lib/firebase");
-      
       console.log("Initiating Google sign-in popup");
       const result = await signInWithPopup(auth, googleProvider);
       const googleUser = result.user;
@@ -309,6 +313,120 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError(error.message || "Failed to sign in with Google. Please try again.");
       }
 
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 Phone Authentication
+  const signInWithPhone = async (phoneNumber: string, recaptchaContainerId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!auth) {
+        console.error("Authentication not initialized.");
+        setError("Authentication service is not available. Please try again later.");
+        throw new Error("Authentication not initialized.");
+      }
+
+      // Only create RecaptchaVerifier in browser environment
+      if (typeof window !== 'undefined') {
+        // Create RecaptchaVerifier
+        const { RecaptchaVerifier } = await import("firebase/auth");
+        const verifier = new RecaptchaVerifier(auth, recaptchaContainerId, {
+          size: 'normal',
+          callback: (response: any) => {
+            console.log("reCAPTCHA verified");
+          },
+          'expired-callback': () => {
+            console.log("reCAPTCHA expired");
+            setError("reCAPTCHA verification expired. Please try again.");
+          }
+        });
+        
+        setRecaptchaVerifier(verifier);
+        
+        // Send verification code
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
+        console.log("SMS sent to", phoneNumber);
+        
+        // Return verificationId to be used in confirmPhoneCode
+        return confirmationResult.verificationId;
+      } else {
+        throw new Error("Phone authentication requires browser environment.");
+      }
+    } catch (error: any) {
+      console.error("Phone sign in error:", error);
+      
+      if (error.code === 'auth/invalid-phone-number') {
+        setError("Invalid phone number. Please enter a valid phone number.");
+      } else if (error.code === 'auth/too-many-requests') {
+        setError("Too many requests. Please try again later.");
+      } else if (error.code === 'auth/captcha-check-failed') {
+        setError("reCAPTCHA verification failed. Please try again.");
+      } else {
+        setError(error.message || "Failed to send verification code. Please try again.");
+      }
+      
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 Confirm Phone Code
+  const confirmPhoneCode = async (verificationId: string, code: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!auth || !db) {
+        console.error("Authentication or database not initialized.");
+        setError("Service is not available. Please try again later.");
+        throw new Error("Authentication or database not initialized.");
+      }
+
+      // Create credential with verification ID and code
+      const { PhoneAuthProvider } = await import("firebase/auth");
+      const credential = PhoneAuthProvider.credential(verificationId, code);
+      
+      // Sign in with credential
+      const { signInWithCredential } = await import("firebase/auth");
+      const userCredential = await signInWithCredential(auth, credential);
+      const phoneUser = userCredential.user;
+      
+      // Check if this is a new signup or returning user
+      const isNewUser = phoneUser.metadata.creationTime === phoneUser.metadata.lastSignInTime;
+      
+      // Save phone user to Firestore
+      await setDoc(doc(db, "users", phoneUser.uid), {
+        uid: phoneUser.uid,
+        phoneNumber: phoneUser.phoneNumber,
+        createdAt: new Date().toISOString(),
+        isNewUser: isNewUser
+      }, { merge: true });
+      
+      setUser(phoneUser);
+      
+      // Redirect based on whether this is a new user
+      if (isNewUser) {
+        router.push("/onboarding");
+      } else {
+        router.push("/");
+      }
+    } catch (error: any) {
+      console.error("Phone verification error:", error);
+      
+      if (error.code === 'auth/invalid-verification-code') {
+        setError("Invalid verification code. Please check and try again.");
+      } else if (error.code === 'auth/code-expired') {
+        setError("Verification code has expired. Please request a new code.");
+      } else {
+        setError(error.message || "Failed to verify phone number. Please try again.");
+      }
+      
       throw error;
     } finally {
       setLoading(false);
@@ -384,6 +502,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut, 
       resetPassword, 
       signInWithGoogle,
+      signInWithPhone,
+      confirmPhoneCode,
       updateUserProfile 
     }}>
       {children}

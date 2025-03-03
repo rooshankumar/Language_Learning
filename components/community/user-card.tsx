@@ -226,3 +226,114 @@ export function UserCard({ user }: UserCardProps) {
     </Card>
   )
 }
+"use client"
+
+import React from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { MessageCircle } from "lucide-react"
+
+interface UserCardProps {
+  id: string
+  name: string
+  photoURL: string
+  age?: number
+  bio?: string
+  nativeLanguage?: string
+  learningLanguage?: string
+  interests?: string[]
+  onMessageClick?: (userId: string) => void
+}
+
+export function UserCard({
+  id,
+  name,
+  photoURL,
+  age,
+  bio,
+  nativeLanguage,
+  learningLanguage,
+  interests = [],
+  onMessageClick
+}: UserCardProps) {
+  return (
+    <Card className="overflow-hidden h-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border-pink-500/20">
+      <CardHeader className="p-4">
+        <div className="flex items-center space-x-4">
+          <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-pink-500">
+            <Image 
+              src={photoURL || "/placeholder-user.jpg"} 
+              alt={name}
+              fill
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <CardTitle className="text-lg">{name}</CardTitle>
+            <CardDescription className="flex gap-2 items-center">
+              {age && <span>{age} years</span>}
+              {nativeLanguage && (
+                <Badge variant="outline" className="bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300 border-pink-300 dark:border-pink-700">
+                  {nativeLanguage} (native)
+                </Badge>
+              )}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        {bio && (
+          <div className="mb-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">{bio}</p>
+          </div>
+        )}
+        
+        {learningLanguage && (
+          <div className="mb-3">
+            <p className="text-xs text-gray-500 dark:text-gray-500 mb-1">Learning</p>
+            <Badge className="bg-pink-600 text-white hover:bg-pink-700">{learningLanguage}</Badge>
+          </div>
+        )}
+        
+        {interests && interests.length > 0 && (
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mb-1">Interests</p>
+            <div className="flex flex-wrap gap-1">
+              {interests.slice(0, 3).map((interest, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {interest}
+                </Badge>
+              ))}
+              {interests.length > 3 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{interests.length - 3}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300 hover:bg-pink-50 dark:hover:bg-pink-900/20"
+          asChild
+        >
+          <Link href={`/profile/${id}`}>View Profile</Link>
+        </Button>
+        <Button
+          size="sm"
+          className="bg-pink-600 hover:bg-pink-700 text-white"
+          onClick={() => onMessageClick && onMessageClick(id)}
+        >
+          <MessageCircle className="h-4 w-4 mr-1" />
+          Message
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}

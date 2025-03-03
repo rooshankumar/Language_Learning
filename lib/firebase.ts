@@ -1,12 +1,13 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getAuth, 
   connectAuthEmulator, 
   GoogleAuthProvider, 
-  GithubAuthProvider 
+  GithubAuthProvider,
+  PhoneAuthProvider 
 } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
-import { createMockAuth, createMockFirestore } from "./mock-auth";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -18,16 +19,18 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Always initialize Firebase - even with incomplete config for development
+// Initialize Firebase
 let firebaseApp;
 let auth;
 let db;
 
-// Check if we have the minimum required config
-const hasMinConfig = !!firebaseConfig.apiKey && !!firebaseConfig.authDomain && !!firebaseConfig.projectId;
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
 
-// For production builds (or if we have the minimum config)
-if (hasMinConfig || process.env.NODE_ENV === 'production') {
+// Check if we have the minimum required config
+const hasMinConfig = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
+
+if (hasMinConfig) {
   // Initialize with real Firebase
   firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(firebaseApp);
@@ -35,15 +38,27 @@ if (hasMinConfig || process.env.NODE_ENV === 'production') {
   
   // Connect to emulators in development if configured
   if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === 'true') {
-    connectAuthEmulator(auth, 'http://localhost:9099');
-    connectFirestoreEmulator(db, 'localhost', 8080);
+    if (isBrowser) {
+      connectAuthEmulator(auth, 'http://localhost:9099');
+      connectFirestoreEmulator(db, 'localhost', 8080);
+    }
   }
+  
+  console.log('✅ Firebase services initialized with real config');
 } else {
-  // Use mock implementations for development when config is incomplete
-  console.log("Running in development mode without Firebase authentication");
-  const { createMockAuth, createMockFirestore } = require('./mock-auth');
-  auth = createMockAuth();
-  db = createMockFirestore();
+  if (process.env.NODE_ENV === 'development') {
+    // Use mock implementations for development when config is incomplete
+    console.log("Using mock Firebase implementation for development");
+    const { createMockAuth, createMockFirestore } = require('./mock-auth');
+    auth = createMockAuth();
+    db = createMockFirestore();
+  } else {
+    // For production without proper config, still initialize Firebase but log an error
+    console.error("Missing Firebase configuration in production environment!");
+    firebaseApp = getApps().length ? getApp() : initializeApp({});
+    auth = getAuth(firebaseApp);
+    db = getFirestore(firebaseApp);
+  }
 }
 
 // Initialize the authentication providers
@@ -54,26 +69,12 @@ googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 // Set custom parameters for login prompt
 googleProvider.setCustomParameters({
   prompt: 'select_account', // Forces account selection even if already logged in
-  login_hint: '', // Clear any previous login hints
 });
 
-// Allow any domain for development - helps with unauthorized domain errors
-if (process.env.NODE_ENV === 'development') {
-  try {
-    const currentURL = typeof window !== 'undefined' ? window.location.origin : '';
-    if (currentURL) {
-      console.log(`Adding current URL to authorized domains: ${currentURL}`);
-    }
-  } catch (error) {
-    console.error("Error getting current URL:", error);
-  }
-}
-
 const githubProvider = new GithubAuthProvider();
+const phoneProvider = new PhoneAuthProvider(auth);
 
-console.log('✅ Firebase services initialized');
-
-// If some config is missing, log warnings but continue with real Firebase
+// Log config status
 if (!Object.values(firebaseConfig).every(value => !!value)) {
   const missingVars = Object.entries(firebaseConfig)
     .filter(([_, value]) => !value)
@@ -84,4 +85,4 @@ if (!Object.values(firebaseConfig).every(value => !!value)) {
   console.warn('⚠️ Authentication might not work correctly without proper Firebase configuration');
 }
 
-export { auth, db, googleProvider, githubProvider };
+export { auth, db, googleProvider, githubProvider, phoneProvider };
