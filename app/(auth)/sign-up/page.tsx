@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function SignUp() {
@@ -47,7 +47,7 @@ export default function SignUp() {
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true)
-    
+
     try {
       const user = await signInWithGoogle()
       // Check if this is a new user by checking createdAt timestamp
@@ -71,8 +71,22 @@ export default function SignUp() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 gradient-bg">
-      <Card className="w-full max-w-md glass-effect">
+    <div className="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute min-h-full min-w-full object-cover opacity-20"
+        >
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-night-sky-with-stars-at-a-calm-lake-time-lapse-53-large.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-sm"></div>
+      </div>
+
+      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-white/90 dark:bg-gray-900/90">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
           <CardDescription className="text-center">Enter your information to create an account</CardDescription>
@@ -152,4 +166,3 @@ export default function SignUp() {
     </div>
   )
 }
-

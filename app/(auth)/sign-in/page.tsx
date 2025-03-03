@@ -32,8 +32,22 @@ export default function SignIn() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 dark:bg-gray-900 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute min-h-full min-w-full object-cover opacity-20"
+        >
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-night-sky-with-stars-at-a-calm-lake-time-lapse-53-large.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-sm"></div>
+      </div>
+      
+      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-white/90 dark:bg-gray-900/90">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Sign in to your account</CardTitle>
           <CardDescription>Enter your email and password to sign in</CardDescription>
