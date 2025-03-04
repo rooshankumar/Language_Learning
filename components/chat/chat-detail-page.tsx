@@ -6,7 +6,7 @@ import { ChatWindow } from '@/components/chat/chat-window'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
 
-export default function ChatDetailPage({ params }: { params: { chatId: string } }) {
+export default function ChatDetailPage({ chatId }: { chatId: string }) {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [recipientId, setRecipientId] = useState<string | null>(null)
@@ -20,7 +20,7 @@ export default function ChatDetailPage({ params }: { params: { chatId: string } 
         const { doc, getDoc } = await import("firebase/firestore")
         const { db } = await import("@/lib/firebase")
 
-        const chatDoc = await getDoc(doc(db, "chats", params.chatId))
+        const chatDoc = await getDoc(doc(db, "chats", chatId))
         if (!chatDoc.exists()) {
           console.error("Chat not found")
           router.push("/chat")
@@ -39,7 +39,7 @@ export default function ChatDetailPage({ params }: { params: { chatId: string } 
     if (user && !loading) {
       fetchChatData()
     }
-  }, [params.chatId, user, loading, router])
+  }, [chatId, user, loading, router])
 
   const handleBack = () => {
     router.push("/chat")
@@ -70,7 +70,7 @@ export default function ChatDetailPage({ params }: { params: { chatId: string } 
       <div className="h-full">
         {recipientId ? (
           <ChatWindow
-            chatId={params.chatId}
+            chatId={chatId}
             recipientId={recipientId}
             onBack={handleBack}
           />
