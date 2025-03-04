@@ -1,6 +1,10 @@
 
 "use client"
 
+import { Firestore } from "firebase/firestore"
+
+
+
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
@@ -21,7 +25,7 @@ export default function Home() {
       const checkOnboardingStatus = async () => {
         try {
           const { doc, getDoc } = await import("firebase/firestore")
-          const { db } = await import("@/lib/firebase")
+          const { db } = await import("@/lib/firebase") as { db: FirebaseFirestore.Firestore }
           
           const userDocRef = doc(db, "users", user.uid)
           const userDoc = await getDoc(userDocRef)
