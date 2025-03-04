@@ -3,6 +3,7 @@
 
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
+import type { PageProps } from 'next/types'
 
 // Use dynamic import with no SSR to prevent Firebase Auth errors during build
 const ChatDetailPage = dynamic(() => import('@/components/chat/chat-detail-page'), {
