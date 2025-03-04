@@ -1,43 +1,39 @@
 
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/auth-context';
-import { AppShell } from '@/components/app-shell';
+import { AppShell } from "@/components/app-shell";
+import { ChatList } from "@/components/chat/chat-list";
+import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
+import { MessageSquarePlus, Users } from "lucide-react";
 
 export default function ChatPage() {
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   
-  useEffect(() => {
-    // Initialize any chat data loading here
-    setIsLoading(false);
-  }, []);
-
-  if (isLoading) {
-    return (
-      <AppShell>
-        <div className="flex items-center justify-center h-full">
-          <div>Loading chat data...</div>
-        </div>
-      </AppShell>
-    );
-  }
-
   return (
     <AppShell>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Chat</h1>
-        {user ? (
-          <div>
-            <p>Welcome to the chat, {user.displayName || 'User'}!</p>
-            {/* Your chat content here */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Conversations</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push("/community")}>
+              <Users className="h-4 w-4 mr-2" />
+              Find Partners
+            </Button>
           </div>
-        ) : (
-          <div>
-            <p>Please sign in to access the chat features.</p>
-          </div>
-        )}
+        </div>
+        
+        <ChatList />
+        
+        <div className="mt-6 text-center">
+          <p className="text-muted-foreground mb-4">
+            Start practicing with language partners from around the world
+          </p>
+          <Button onClick={() => router.push("/community")}>
+            <MessageSquarePlus className="h-4 w-4 mr-2" />
+            Find Language Partners
+          </Button>
+        </div>
       </div>
     </AppShell>
   );

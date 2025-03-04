@@ -127,9 +127,9 @@ export function Dashboard() {
                       <p className="text-xs text-muted-foreground">{conversationTimes[i]}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => router.push("/chat")}>
+                  <Button variant="ghost" size="sm" onClick={() => router.push("/community")}>
                     <MessageCircle className="w-4 h-4 mr-2" />
-                    Continue
+                    Find Partners
                   </Button>
                 </div>
               ))}
