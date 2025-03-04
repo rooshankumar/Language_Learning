@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect } from "react"
@@ -13,36 +12,33 @@ import Link from "next/link"
 export default function Home() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  
-  // For first-time users, check if we need to redirect to onboarding
+
   useEffect(() => {
-    if (!loading && user) {
-      // Check if this user has completed onboarding
+    if (!loading && user?.uid) {
+      // Async function to check user onboarding status
       const checkOnboardingStatus = async () => {
         try {
-          const { doc, getDoc, Firestore } = await import("firebase/firestore")
-          const { db } = await import("@/lib/firebase") as { db: Firestore }
-          
+          const { doc, getDoc } = await import("firebase/firestore")
+          const { db } = await import("@/lib/firebase").then((module) => ({ db: module.db })) // Ensuring correct dynamic import
+
           const userDocRef = doc(db, "users", user.uid)
           const userDoc = await getDoc(userDocRef)
-          const userData = userDoc.data()
-          
-          // If user has no languages set, they need to complete onboarding
-          if (userDoc.exists() && 
-              (!userData.nativeLanguages || !userData.learningLanguages || 
-               userData.nativeLanguages.length === 0 || userData.learningLanguages.length === 0)) {
+          const userData = userDoc.exists() ? userDoc.data() : null
+
+          // If user has no languages set, redirect to onboarding
+          if (!userData?.nativeLanguages?.length || !userData?.learningLanguages?.length) {
             router.push("/onboarding")
           }
         } catch (error) {
           console.error("Error checking onboarding status:", error)
         }
       }
-      
+
       checkOnboardingStatus()
     }
   }, [user, loading, router])
 
-  // If not authenticated, show landing page
+  // If user is not authenticated, show landing page
   if (!user && !loading) {
     return (
       <div className="relative min-h-screen overflow-hidden">
@@ -67,7 +63,7 @@ export default function Home() {
     )
   }
 
-  // If authenticated, show dashboard
+  // If user is authenticated, show the dashboard
   return (
     <AppShell>
       <Dashboard />
