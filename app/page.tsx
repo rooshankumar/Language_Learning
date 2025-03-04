@@ -18,8 +18,8 @@ export default function Home() {
       // Async function to check user onboarding status
       const checkOnboardingStatus = async () => {
         try {
-          const { doc, getDoc } = await import("firebase/firestore")
-          const { db } = await import("@/lib/firebase").then((module) => ({ db: module.db })) // Ensuring correct dynamic import
+          const { doc, getDoc, Firestore } = await import("firebase/firestore")
+          const { db } = await import("@/lib/firebase").then((module) => ({ db: module.db as Firestore })) // Ensuring correct dynamic import
 
           const userDocRef = doc(db, "users", user.uid)
           const userDoc = await getDoc(userDocRef)
