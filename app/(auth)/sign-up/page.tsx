@@ -88,7 +88,7 @@ export default function SignUp() {
     }
 
     try {
-      const verificationId = await signInWithPhone(phoneNumber)
+      const verificationId = await signInWithPhone(phoneNumber, "recaptcha-container")
       setVerificationId(verificationId)
       setShowCodeInput(true)
       toast({
